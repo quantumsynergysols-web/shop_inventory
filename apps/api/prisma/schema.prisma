@@ -1,0 +1,664 @@
+// Shop Inventory ERP – PostgreSQL schema
+// Source: SRS v1.1 §6 (data requirements) and the ERD (UML diagram 11).
+//
+// Conventions
+// - Money is BigInt paisa (C-4). Rs 1 = 100 paisa. Column names end in "Paisa".
+// - Quantities are Decimal(14,3) in the product's base unit (FR-STK-10).
+// - Every tenant table has shopId (FR-AUTH-03). Row-level security policies are added
+//   in a raw SQL migration (NFR-SEC-02); the API also filters by shopId in every query.
+// - Stock movements are append-only (C-5). Corrections are new documents (void, return, adjustment).
+// - Average cost is not stored; it is stockValuePaisa / onHand (see packages/domain/src/costing.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  SALESMAN
+  STOREKEEPER
+  ACCOUNTANT
+}
+
+enum PartyType {
+  SUPPLIER
+  CUSTOMER
+  BOTH
+}
+
+enum PriceLevel {
+  RETAIL
+  WHOLESALE
+}
+
+enum ScanType {
+  PURCHASE
+  SALE
+}
+
+enum ScanStatus {
+  DRAFT
+  QUEUED
+  UPLOADING
+  PROCESSING
+  NEEDS_REVIEW
+  FAILED
+  CONFIRMED
+  DISCARDED
+}
+
+enum DocKind {
+  PURCHASE
+  SALE
+  SALES_RETURN
+  PURCHASE_RETURN
+  ADJUST_IN
+  ADJUST_OUT
+  OPENING
+  VOID
+}
+
+enum DocStatus {
+  POSTED
+  PARTIALLY_RETURNED
+  FULLY_RETURNED
+  VOIDED
+}
+
+enum PayStatus {
+  UNPAID
+  PART_PAID
+  PAID
+}
+
+enum PayMode {
+  CASH
+  BANK
+  JAZZCASH
+  EASYPAISA
+}
+
+enum PaymentDirection {
+  RECEIVED
+  PAID
+}
+
+enum MoveType {
+  IN
+  OUT
+}
+
+enum PriceType {
+  PURCHASE
+  SALE
+}
+
+enum DayStatus {
+  OPEN
+  CLOSED
+  REOPENED
+}
+
+model Shop {
+  id                 String    @id @default(uuid()) @db.Uuid
+  name               String
+  phone              String?
+  address            String?
+  ntn                String?
+  logoKey            String?
+  receiptFooter      String?
+  plan               String    @default("starter")
+  /// FR-SET-03 defaults: markupPct, allowNegativeStock, lowStockDefault, salesmanMayCloseDay,
+  /// salesmanExpenseLimitPaisa, closingNoteLimitPaisa
+  settings           Json      @default("{}")
+  /// FR-AI-16: one-time consent that bill photos go to a foreign AI provider
+  aiConsentAt        DateTime?
+  photoRetentionDays Int       @default(1825)
+  createdAt          DateTime  @default(now())
+
+  users        User[]
+  categories   Category[]
+  products     Product[]
+  parties      Party[]
+  scans        Scan[]
+  documents    Document[]
+  movements    StockMovement[]
+  receipts     Receipt[]
+  payments     Payment[]
+  ledger       LedgerEntry[]
+  dayClosings  DayClosing[]
+  expenses     Expense[]
+  expenseHeads ExpenseHead[]
+  aiCalls      AiCallLog[]
+  auditLogs    AuditLog[]
+  counters     DocCounter[]
+  aiSetting    AiSetting?
+
+  @@map("shop")
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  shopId       String    @db.Uuid
+  name         String
+  phone        String?   @unique
+  email        String?   @unique
+  passwordHash String
+  /// FR-AUTH-05 quick switch PIN (C priority)
+  pinHash      String?
+  role         Role
+  active       Boolean   @default(true)
+  /// NFR-SEC-04: lockout after 5 failed logins
+  failedLogins Int       @default(0)
+  lockedUntil  DateTime?
+  createdAt    DateTime  @default(now())
+
+  shop        Shop         @relation(fields: [shopId], references: [id])
+  scans       Scan[]
+  documents   Document[]
+  dayClosings DayClosing[]
+  expenses    Expense[]
+  auditLogs   AuditLog[]
+
+  @@index([shopId])
+  @@map("app_user")
+}
+
+model Category {
+  id     String @id @default(uuid()) @db.Uuid
+  shopId String @db.Uuid
+  name   String
+
+  shop     Shop      @relation(fields: [shopId], references: [id])
+  products Product[]
+
+  @@unique([shopId, name])
+  @@map("category")
+}
+
+model Product {
+  id                  String   @id @default(uuid()) @db.Uuid
+  shopId              String   @db.Uuid
+  categoryId          String?  @db.Uuid
+  sku                 String
+  name                String
+  /// normalizeName(name) from packages/domain/src/matching.ts
+  normalizedName      String
+  baseUnit            String   @default("pcs")
+  purchasePricePaisa  BigInt   @default(0)
+  salePricePaisa      BigInt   @default(0)
+  /// FR-PRD-07 (S priority)
+  wholesalePricePaisa BigInt?
+  /// Cached Σ movements (FR-STK-02), updated in the same transaction as the movement
+  onHand              Decimal  @default(0) @db.Decimal(14, 3)
+  stockValuePaisa     BigInt   @default(0)
+  lastUnitCostPaisa   BigInt   @default(0)
+  minLevel            Decimal  @default(0) @db.Decimal(14, 3)
+  active              Boolean  @default(true)
+  imageKey            String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  shop         Shop            @relation(fields: [shopId], references: [id])
+  category     Category?       @relation(fields: [categoryId], references: [id])
+  units        ProductUnit[]
+  aliases      ProductAlias[]
+  priceHistory PriceHistory[]
+  movements    StockMovement[]
+  docLines     DocLine[]
+  scanLines    ScanLine[]
+
+  @@unique([shopId, sku])
+  @@index([shopId, normalizedName])
+  @@map("product")
+}
+
+model ProductUnit {
+  productId    String  @db.Uuid
+  unit         String
+  factorToBase Decimal @db.Decimal(14, 4)
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@id([productId, unit])
+  @@map("product_unit")
+}
+
+model ProductAlias {
+  id         String   @id @default(uuid()) @db.Uuid
+  productId  String   @db.Uuid
+  /// FR-PRD-08: alias learned from one supplier's way of writing the item; null = any party
+  partyId    String?  @db.Uuid
+  text       String
+  normalized String
+  timesUsed  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+  party   Party?  @relation(fields: [partyId], references: [id])
+
+  @@unique([productId, normalized, partyId])
+  @@index([normalized])
+  @@map("product_alias")
+}
+
+model PriceHistory {
+  id            String    @id @default(uuid()) @db.Uuid
+  productId     String    @db.Uuid
+  documentId    String?   @db.Uuid
+  type          PriceType
+  oldPricePaisa BigInt
+  newPricePaisa BigInt
+  at            DateTime  @default(now())
+
+  product  Product   @relation(fields: [productId], references: [id])
+  document Document? @relation(fields: [documentId], references: [id])
+
+  @@index([productId, at])
+  @@map("price_history")
+}
+
+model Party {
+  id                  String     @id @default(uuid()) @db.Uuid
+  shopId              String     @db.Uuid
+  name                String
+  normalizedName      String
+  phone               String?
+  address             String?
+  type                PartyType
+  priceLevel          PriceLevel @default(RETAIL)
+  /// Positive: the party owes the shop (receivable). Negative: the shop owes the party (payable).
+  openingBalancePaisa BigInt     @default(0)
+  active              Boolean    @default(true)
+  createdAt           DateTime   @default(now())
+
+  shop      Shop           @relation(fields: [shopId], references: [id])
+  documents Document[]
+  payments  Payment[]
+  aliases   ProductAlias[]
+  ledger    LedgerEntry[]
+
+  @@index([shopId, normalizedName])
+  @@map("party")
+}
+
+model Scan {
+  id             String     @id @default(uuid()) @db.Uuid
+  shopId         String     @db.Uuid
+  userId         String     @db.Uuid
+  type           ScanType
+  status         ScanStatus @default(DRAFT)
+  /// Id made on the device for offline uploads (FR-SCAN-07); makes the upload idempotent
+  clientId       String?
+  pageCount      Int        @default(0)
+  readTotalPaisa BigInt?
+  partyNameRead  String?
+  billNoRead     String?
+  billDateRead   DateTime?  @db.Date
+  /// Bill-level flags from checkExtraction(): TOTAL_MISMATCH, ROWS_MAY_BE_MISSING, ...
+  checkFlags     String[]
+  missingSerials Int[]
+  failureReason  String?
+  /// BR-5: a scan confirms into exactly one document, once
+  documentId     String?    @unique @db.Uuid
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  shop     Shop        @relation(fields: [shopId], references: [id])
+  user     User        @relation(fields: [userId], references: [id])
+  document Document?   @relation(fields: [documentId], references: [id])
+  pages    ScanPage[]
+  lines    ScanLine[]
+  aiCalls  AiCallLog[]
+
+  @@unique([shopId, clientId])
+  @@index([shopId, status])
+  @@map("scan")
+}
+
+model ScanPage {
+  id          String   @id @default(uuid()) @db.Uuid
+  scanId      String   @db.Uuid
+  pageNo      Int
+  imageKey    String
+  originalKey String?
+  /// Perceptual hash for duplicate-bill detection (FR-SCAN-09)
+  phash       String?
+  createdAt   DateTime @default(now())
+
+  scan Scan @relation(fields: [scanId], references: [id])
+
+  @@unique([scanId, pageNo])
+  @@index([phash])
+  @@map("scan_page")
+}
+
+model ScanLine {
+  id             String   @id @default(uuid()) @db.Uuid
+  scanId         String   @db.Uuid
+  /// Order on the review screen
+  lineNo         Int
+  /// Serial number written on the paper (FR-AI-12/13)
+  serialNo       Int?
+  page           Int
+  rawName        String
+  qty            Decimal? @db.Decimal(14, 3)
+  unit           String?
+  ratePaisa      BigInt?
+  lineTotalPaisa BigInt?
+  confidence     Float
+  bbox           Json?
+  productId      String?  @db.Uuid
+  matchScore     Float?
+  /// alias | exact | auto | suggest | new | manual
+  matchStatus    String?
+  /// Line flags from checkExtraction(): LOW_CONFIDENCE, AMOUNT_MISMATCH, ...
+  flags          String[]
+  deleted        Boolean  @default(false)
+
+  scan    Scan     @relation(fields: [scanId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([scanId])
+  @@map("scan_line")
+}
+
+model Document {
+  id             String    @id @default(uuid()) @db.Uuid
+  shopId         String    @db.Uuid
+  kind           DocKind
+  docNo          String
+  docDate        DateTime  @db.Date
+  partyId        String?   @db.Uuid
+  createdById    String    @db.Uuid
+  status         DocStatus @default(POSTED)
+  payStatus      PayStatus @default(UNPAID)
+  subtotalPaisa  BigInt
+  discountPaisa  BigInt    @default(0)
+  taxPaisa       BigInt    @default(0)
+  totalPaisa     BigInt
+  paidPaisa      BigInt    @default(0)
+  /// Σ COGS of the OUT movements (BR-3, BR-9)
+  cogsPaisa      BigInt    @default(0)
+  /// Required for void and adjustment
+  reason         String?
+  /// For kind VOID: the document this one reverses (BR-6)
+  voidsDocId     String?   @unique @db.Uuid
+  /// For SALES_RETURN / PURCHASE_RETURN: the original document
+  returnOfDocId  String?   @db.Uuid
+  /// NFR-REL-02: a retried confirm with the same key returns the first result
+  idempotencyKey String?
+  postedAt       DateTime  @default(now())
+
+  shop         Shop           @relation(fields: [shopId], references: [id])
+  party        Party?         @relation(fields: [partyId], references: [id])
+  createdBy    User           @relation(fields: [createdById], references: [id])
+  lines        DocLine[]
+  receipt      Receipt?
+  ledger       LedgerEntry[]
+  payments     Payment[]
+  scan         Scan?
+  priceChanges PriceHistory[]
+  voidsDoc     Document?      @relation("Void", fields: [voidsDocId], references: [id])
+  voidedBy     Document?      @relation("Void")
+  returnOf     Document?      @relation("Return", fields: [returnOfDocId], references: [id])
+  returns      Document[]     @relation("Return")
+
+  @@unique([shopId, kind, docNo])
+  @@unique([shopId, idempotencyKey])
+  @@index([shopId, docDate])
+  @@map("document")
+}
+
+model DocLine {
+  id            String  @id @default(uuid()) @db.Uuid
+  documentId    String  @db.Uuid
+  lineNo        Int
+  productId     String  @db.Uuid
+  qty           Decimal @db.Decimal(14, 3)
+  unit          String
+  qtyBase       Decimal @db.Decimal(14, 3)
+  ratePaisa     BigInt
+  discountPaisa BigInt  @default(0)
+  amountPaisa   BigInt
+
+  document Document       @relation(fields: [documentId], references: [id])
+  product  Product        @relation(fields: [productId], references: [id])
+  movement StockMovement?
+
+  @@unique([documentId, lineNo])
+  @@map("doc_line")
+}
+
+model StockMovement {
+  id            String   @id @default(uuid()) @db.Uuid
+  shopId        String   @db.Uuid
+  productId     String   @db.Uuid
+  docLineId     String   @unique @db.Uuid
+  type          MoveType
+  /// Signed: + for IN, - for OUT
+  qtyBase       Decimal  @db.Decimal(14, 3)
+  /// Signed change in stock value; for OUT this is minus the COGS (BR-3)
+  valuePaisa    BigInt
+  unitCostPaisa BigInt
+  balanceAfter  Decimal  @db.Decimal(14, 3)
+  at            DateTime @default(now())
+
+  shop    Shop    @relation(fields: [shopId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+  docLine DocLine @relation(fields: [docLineId], references: [id])
+
+  @@index([productId, at])
+  @@index([shopId, at])
+  @@map("stock_movement")
+}
+
+model Receipt {
+  id         String   @id @default(uuid()) @db.Uuid
+  shopId     String   @db.Uuid
+  documentId String   @unique @db.Uuid
+  /// FR-RCP-04: sequential per shop, never reused (taken from DocCounter "RECEIPT")
+  receiptNo  String
+  pdfKey     String?
+  createdAt  DateTime @default(now())
+
+  shop     Shop     @relation(fields: [shopId], references: [id])
+  document Document @relation(fields: [documentId], references: [id])
+
+  @@unique([shopId, receiptNo])
+  @@map("receipt")
+}
+
+model Payment {
+  id          String           @id @default(uuid()) @db.Uuid
+  shopId      String           @db.Uuid
+  partyId     String           @db.Uuid
+  documentId  String?          @db.Uuid
+  direction   PaymentDirection
+  amountPaisa BigInt
+  mode        PayMode
+  paidOn      DateTime         @db.Date
+  note        String?
+  createdAt   DateTime         @default(now())
+
+  shop     Shop          @relation(fields: [shopId], references: [id])
+  party    Party         @relation(fields: [partyId], references: [id])
+  document Document?     @relation(fields: [documentId], references: [id])
+  ledger   LedgerEntry[]
+
+  @@index([shopId, paidOn])
+  @@index([partyId])
+  @@map("payment")
+}
+
+model LedgerEntry {
+  id          String   @id @default(uuid()) @db.Uuid
+  shopId      String   @db.Uuid
+  documentId  String?  @db.Uuid
+  paymentId   String?  @db.Uuid
+  partyId     String?  @db.Uuid
+  /// e.g. RECEIVABLE, PAYABLE, CASH, BANK, SALES, PURCHASES, COGS, INVENTORY, EXPENSE
+  account     String
+  debitPaisa  BigInt   @default(0)
+  creditPaisa BigInt   @default(0)
+  entryDate   DateTime @db.Date
+  createdAt   DateTime @default(now())
+
+  shop     Shop      @relation(fields: [shopId], references: [id])
+  document Document? @relation(fields: [documentId], references: [id])
+  payment  Payment?  @relation(fields: [paymentId], references: [id])
+  party    Party?    @relation(fields: [partyId], references: [id])
+
+  @@index([shopId, account, entryDate])
+  @@index([partyId])
+  @@map("ledger_entry")
+}
+
+model DayClosing {
+  id                    String    @id @default(uuid()) @db.Uuid
+  shopId                String    @db.Uuid
+  businessDate          DateTime  @db.Date
+  status                DayStatus @default(OPEN)
+  openingCashPaisa      BigInt    @default(0)
+  billCount             Int       @default(0)
+  salesTotalPaisa       BigInt    @default(0)
+  salesCashPaisa        BigInt    @default(0)
+  salesBankPaisa        BigInt    @default(0)
+  salesCreditPaisa      BigInt    @default(0)
+  cogsPaisa             BigInt    @default(0)
+  grossProfitPaisa      BigInt    @default(0)
+  expensesTotalPaisa    BigInt    @default(0)
+  netProfitPaisa        BigInt    @default(0)
+  purchasesTotalPaisa   BigInt    @default(0)
+  wasooliCashPaisa      BigInt    @default(0)
+  wasooliBankPaisa      BigInt    @default(0)
+  supplierPaidCashPaisa BigInt    @default(0)
+  supplierPaidBankPaisa BigInt    @default(0)
+  cashRefundsPaisa      BigInt    @default(0)
+  /// BR-8
+  expectedCashPaisa     BigInt    @default(0)
+  countedCashPaisa      BigInt?
+  differencePaisa       BigInt?
+  note                  String?
+  closedById            String?   @db.Uuid
+  closedAt              DateTime?
+  reopenReason          String?
+
+  shop     Shop      @relation(fields: [shopId], references: [id])
+  closedBy User?     @relation(fields: [closedById], references: [id])
+  expenses Expense[]
+
+  @@unique([shopId, businessDate])
+  @@map("day_closing")
+}
+
+model ExpenseHead {
+  id     String  @id @default(uuid()) @db.Uuid
+  shopId String  @db.Uuid
+  name   String
+  active Boolean @default(true)
+
+  shop     Shop      @relation(fields: [shopId], references: [id])
+  expenses Expense[]
+
+  @@unique([shopId, name])
+  @@map("expense_head")
+}
+
+model Expense {
+  id           String   @id @default(uuid()) @db.Uuid
+  shopId       String   @db.Uuid
+  businessDate DateTime @db.Date
+  headId       String   @db.Uuid
+  amountPaisa  BigInt
+  paidFrom     PayMode
+  note         String?
+  photoKey     String?
+  userId       String   @db.Uuid
+  dayClosingId String?  @db.Uuid
+  createdAt    DateTime @default(now())
+
+  shop       Shop        @relation(fields: [shopId], references: [id])
+  head       ExpenseHead @relation(fields: [headId], references: [id])
+  user       User        @relation(fields: [userId], references: [id])
+  dayClosing DayClosing? @relation(fields: [dayClosingId], references: [id])
+
+  @@index([shopId, businessDate])
+  @@map("expense")
+}
+
+model AiSetting {
+  shopId              String  @id @db.Uuid
+  /// "hosted" = QSSols key with scan quota (FR-AI-15); otherwise the shop's own key
+  provider            String  @default("hosted")
+  model               String?
+  /// AES-256 encrypted (NFR-SEC-01); never returned by the API
+  apiKeyEnc           Bytes?
+  apiKeyLast4         String?
+  confidenceThreshold Float   @default(0.85)
+  monthlyScanQuota    Int?
+
+  shop Shop @relation(fields: [shopId], references: [id])
+
+  @@map("ai_setting")
+}
+
+model AiCallLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  shopId       String   @db.Uuid
+  scanId       String   @db.Uuid
+  provider     String
+  model        String
+  pageNo       Int?
+  tokensIn     Int
+  tokensOut    Int
+  /// Cost in millionths of a US dollar, to avoid floats (FR-AI-09)
+  costMicroUsd BigInt
+  ms           Int
+  ok           Boolean
+  error        String?
+  createdAt    DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id])
+  scan Scan @relation(fields: [scanId], references: [id])
+
+  @@index([shopId, createdAt])
+  @@map("ai_call_log")
+}
+
+model AuditLog {
+  id       String   @id @default(uuid()) @db.Uuid
+  shopId   String   @db.Uuid
+  userId   String?  @db.Uuid
+  action   String
+  entity   String
+  entityId String?
+  before   Json?
+  after    Json?
+  reason   String?
+  at       DateTime @default(now())
+
+  shop Shop  @relation(fields: [shopId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([shopId, at])
+  @@map("audit_log")
+}
+
+/// Gap-free numbering per shop and kind (doc numbers, and "RECEIPT" for FR-RCP-04).
+/// Incremented with SELECT ... FOR UPDATE inside the confirm transaction.
+model DocCounter {
+  shopId String @db.Uuid
+  kind   String
+  next   Int    @default(1)
+
+  shop Shop @relation(fields: [shopId], references: [id])
+
+  @@id([shopId, kind])
+  @@map("doc_counter")
+}

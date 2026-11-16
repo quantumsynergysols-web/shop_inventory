@@ -1,0 +1,1460 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Shop Inventory ERP Spec</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: single reading column, wide tables/diagrams scroll inside their own box */
+:root{--bg:#fbfbfe;--fg:#1d2140;--muted:#5d6285;--line:#dcdeee;--soft:#f0f0fa;--accent:#4b44d6;
+--display:'Space Grotesk',system-ui,sans-serif;--body:Inter,system-ui,'Segoe UI',sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#13152a;--fg:#e6e7f5;--muted:#a3a7c7;--line:#2e3256;--soft:#1c1f3a;--accent:#9d98ff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#13152a;--fg:#e6e7f5;--muted:#a3a7c7;--line:#2e3256;--soft:#1c1f3a;--accent:#9d98ff;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:15px/1.65 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+main{max-width:1000px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.25}
+h1{font-size:30px;margin:.4em 0 .2em}h2{font-size:21px;border-bottom:2px solid var(--accent);padding-bottom:4px;margin-top:2em}h3{font-size:17px;margin-top:1.4em}
+a{color:var(--accent)}
+.tag{color:var(--accent);font:600 12px var(--body);letter-spacing:.16em;text-transform:uppercase}
+.lead{color:var(--muted)}
+nav{display:flex;flex-wrap:wrap;gap:8px 16px;padding:12px 0;border-bottom:1px solid var(--line)}
+.tw{overflow-x:auto;margin:10px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{background:var(--soft)}
+code{background:var(--soft);border-radius:4px;padding:0 4px;font-size:.92em}
+pre{background:var(--soft);border-radius:6px;padding:10px;overflow-x:auto}
+.diagram{margin-top:28px}.diagram .box{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px}
+.diagram pre.mermaid{background:none;text-align:center;margin:0}
+.src{color:var(--muted);font-size:12px;margin:0 0 8px}
+</style>
+<main>
+<div class="tag">Quantum Synergy Solutions · QSSols</div>
+<h1>Shop Inventory ERP – Photo Scan</h1>
+<p class="lead">Software Requirements Specification, UML model (13 diagrams) and research findings · v1.1 draft · 14 Nov 2026</p>
+<nav><a href="#srs">Part A – SRS</a><a href="#uml">Part B – UML</a><a href="#research">Part C – Research</a></nav>
+<section id="srs"><div id="srs-body"></div></section>
+<section id="uml"><h1>Part B – UML model</h1>
+<div class="diagram"><h2>Use Case Diagram</h2><p class="src">Source: docs/uml/01-use-case.mmd</p><div class="box"><pre class="mermaid">%% Use Case Diagram - actors outside, use cases inside the system boundary
+flowchart LR
+  Sales([Salesman])
+  Store([Storekeeper])
+  Owner([Owner / Admin])
+  Acct([Accountant])
+  AI[[Vision AI Service]]
+  WA[[WhatsApp / Printer]]
+  subgraph SYS["Shop Inventory ERP - Photo Scan"]
+    direction LR
+    subgraph G1["Photo scanning"]
+      direction TB
+      UC1((UC-01 Scan purchase list - Stock IN))
+      UC2((UC-02 Scan sale bill - Stock OUT))
+      UCR((Review and correct rows))
+      UCM((Match / create product))
+      UCRC((Generate and share receipt))
+      UCM2((Manual Stock IN / OUT))
+    end
+    subgraph G2["Stock and documents"]
+      direction TB
+      UC3((UC-03 Void document))
+      UC4((UC-04 Sales / purchase return))
+      UC5((UC-05 Stock adjustment))
+      UC6((UC-06 Manage products))
+      UC12((UC-12 Import opening stock))
+      UC10((UC-10 Record party payment))
+    end
+    subgraph G3["Admin and reports"]
+      direction TB
+      UC11((UC-11 Dashboard and low-stock alerts))
+      UC7((UC-07 Reports and Excel export))
+      UC8((UC-08 Configure AI key))
+      UC9((UC-09 Manage users and roles))
+      UC13((UC-13 Close the day - galla count, profit))
+      UC14((UC-14 Add expense - kharcha))
+    end
+  end
+  Sales --- UC2
+  Store --- UC1
+  Sales --- UC4
+  Store --- UC4
+  Sales --- UC10
+  Owner --- G1
+  Owner --- G2
+  Owner --- G3
+  Acct --- UC7
+  UC1 -. include .-&gt; UCR
+  UC2 -. include .-&gt; UCR
+  UCR -. include .-&gt; UCM
+  UC2 -. include .-&gt; UCRC
+  UCM2 -. extend .-&gt; UCR
+  UC1 --- AI
+  UC2 --- AI
+  UCRC --- WA
+  Sales --- UC14
+  UC13 -. include .-&gt; UC14
+  UC13 --- WA
+</pre></div></div>
+<div class="diagram"><h2>Class Diagram (domain model)</h2><p class="src">Source: docs/uml/02-class.mmd</p><div class="box"><pre class="mermaid">classDiagram
+  direction LR
+  class Shop {
+    +uuid id
+    +string name
+    +string phone
+    +string address
+    +string ntn
+    +string logoUrl
+    +Plan plan
+  }
+  class User {
+    +uuid id
+    +string name
+    +string phone
+    +string passwordHash
+    +Role role
+    +bool active
+    +login()
+  }
+  class Role {
+    &lt;&lt;enumeration&gt;&gt;
+    OWNER
+    SALESMAN
+    STOREKEEPER
+    ACCOUNTANT
+  }
+  class Category {
+    +uuid id
+    +string name
+  }
+  class Unit {
+    +string code
+    +string name
+  }
+  class Product {
+    +uuid id
+    +string sku
+    +string name
+    +decimal purchasePrice
+    +decimal salePrice
+    +decimal avgCost
+    +decimal onHand
+    +decimal minLevel
+    +bool active
+    +isLowStock() bool
+    +applyStockIn(qty, rate)
+  }
+  class ProductUnit {
+    +string unitCode
+    +decimal factorToBase
+  }
+  class ProductAlias {
+    +string text
+    +string normalized
+    +int timesUsed
+  }
+  class PriceHistory {
+    +PriceType type
+    +decimal oldPrice
+    +decimal newPrice
+    +datetime at
+  }
+  class Party {
+    +uuid id
+    +string name
+    +string phone
+    +PartyType type
+    +decimal openingBalance
+    +balance() decimal
+  }
+  class Scan {
+    +uuid id
+    +ScanType type
+    +ScanStatus status
+    +int pageCount
+    +decimal readTotal
+    +submit()
+    +retry()
+    +confirm()
+  }
+  class ScanPage {
+    +int pageNo
+    +string imageUrl
+    +string phash
+  }
+  class ScanLine {
+    +int lineNo
+    +string rawName
+    +decimal qty
+    +string unit
+    +decimal rate
+    +decimal lineTotal
+    +float confidence
+    +json bbox
+    +uuid matchedProductId
+    +float matchScore
+    +bool flagged
+  }
+  class Document {
+    &lt;&lt;abstract&gt;&gt;
+    +uuid id
+    +string docNo
+    +date date
+    +DocStatus status
+    +decimal total
+    +void(reason)
+  }
+  class PurchaseDoc
+  class SaleDoc {
+    +decimal discount
+    +decimal paid
+    +PaymentMode mode
+  }
+  class ReturnDoc {
+    +ReturnKind kind
+  }
+  class AdjustmentDoc {
+    +string reason
+  }
+  class DocLine {
+    +decimal qty
+    +string unit
+    +decimal qtyBase
+    +decimal rate
+    +decimal amount
+  }
+  class StockMovement {
+    +uuid id
+    +MoveType type
+    +decimal qtyBase
+    +decimal unitCost
+    +decimal balanceAfter
+    +datetime at
+  }
+  class Receipt {
+    +string receiptNo
+    +string pdfUrl
+    +share()
+    +print()
+  }
+  class Payment {
+    +decimal amount
+    +PaymentMode mode
+    +date date
+  }
+  class LedgerEntry {
+    +decimal debit
+    +decimal credit
+    +string account
+  }
+  class AiProvider {
+    &lt;&lt;interface&gt;&gt;
+    +extract(pages, hints) ExtractionResult
+  }
+  class OpenAiAdapter
+  class GeminiAdapter
+  class ManualDemoAdapter
+  class AiCallLog {
+    +string provider
+    +string model
+    +int tokensIn
+    +int tokensOut
+    +decimal costUsd
+    +int ms
+  }
+  class AuditLog {
+    +string action
+    +string entity
+    +json before
+    +json after
+    +datetime at
+  }
+
+  Shop "1" *-- "many" User
+  Shop "1" *-- "many" Product
+  Shop "1" *-- "many" Party
+  Shop "1" *-- "many" Scan
+  User --&gt; Role
+  Product "*" --&gt; "1" Category
+  Product "1" *-- "many" ProductUnit
+  Product "1" *-- "many" ProductAlias
+  Product "1" *-- "many" PriceHistory
+  Scan "1" *-- "1..10" ScanPage
+  Scan "1" *-- "many" ScanLine
+  ScanLine "*" --&gt; "0..1" Product : matched to
+  Scan "1" --&gt; "0..1" Document : confirms into
+  Document &lt;|-- PurchaseDoc
+  Document &lt;|-- SaleDoc
+  Document &lt;|-- ReturnDoc
+  Document &lt;|-- AdjustmentDoc
+  Document "1" *-- "many" DocLine
+  Document "*" --&gt; "0..1" Party
+  DocLine "*" --&gt; "1" Product
+  DocLine "1" --&gt; "1" StockMovement : posts
+  StockMovement "*" --&gt; "1" Product
+  SaleDoc "1" --&gt; "1" Receipt
+  Party "1" --&gt; "many" Payment
+  Document "1" --&gt; "many" LedgerEntry
+  AiProvider &lt;|.. OpenAiAdapter
+  AiProvider &lt;|.. GeminiAdapter
+  AiProvider &lt;|.. ManualDemoAdapter
+  Scan ..&gt; AiProvider : uses
+  Scan "1" --&gt; "many" AiCallLog
+  class DayClosing {
+    +date businessDate
+    +DayStatus status
+    +decimal openingCash
+    +decimal salesTotal
+    +decimal cogs
+    +decimal grossProfit
+    +decimal expensesTotal
+    +decimal netProfit
+    +decimal expectedCash
+    +decimal countedCash
+    +decimal difference
+    +close(countedCash, note)
+    +reopen(reason)
+  }
+  class Expense {
+    +ExpenseHead head
+    +decimal amount
+    +PaymentMode paidFrom
+    +string note
+  }
+  Shop "1" *-- "many" DayClosing
+  DayClosing "1" o-- "many" Expense
+  DayClosing ..&gt; Document : sums the day's
+  DayClosing ..&gt; StockMovement : COGS from
+</pre></div></div>
+<div class="diagram"><h2>Sequence Diagram – Purchase scan (Stock IN)</h2><p class="src">Source: docs/uml/03-sequence-purchase.mmd</p><div class="box"><pre class="mermaid">sequenceDiagram
+  autonumber
+  actor SK as Storekeeper
+  participant PWA as Mobile PWA
+  participant API as API Server
+  participant OBJ as Object Storage
+  participant Q as Job Queue / Worker
+  participant AI as Vision AI
+  participant DB as PostgreSQL
+  SK-&gt;&gt;PWA: Choose "Purchase (Stock IN)", take 1..n photos
+  PWA-&gt;&gt;PWA: Quality check, compress, de-skew
+  PWA-&gt;&gt;API: POST /scans {type: purchase} + pages
+  API-&gt;&gt;OBJ: Store page images
+  API-&gt;&gt;DB: INSERT scan (status=PROCESSING), scan_pages
+  API-&gt;&gt;Q: enqueue extract(scanId)
+  API--&gt;&gt;PWA: 202 {scanId}
+  Q-&gt;&gt;AI: extract(page images, JSON schema, product hints)
+  AI--&gt;&gt;Q: header + lines + confidence
+  Q-&gt;&gt;Q: Validate qty×rate, Σlines vs total, normalise units
+  Q-&gt;&gt;DB: Match aliases / fuzzy match products
+  Q-&gt;&gt;DB: INSERT scan_lines, AiCallLog, status=NEEDS_REVIEW
+  Q--&gt;&gt;PWA: notify (push / poll)
+  PWA-&gt;&gt;API: GET /scans/{id}
+  API--&gt;&gt;PWA: lines + flags + photo URLs
+  SK-&gt;&gt;PWA: Correct rows, pick supplier, set prices for new items
+  PWA-&gt;&gt;API: PATCH /scans/{id}/lines (autosave)
+  SK-&gt;&gt;PWA: Confirm
+  PWA-&gt;&gt;API: POST /scans/{id}/confirm (Idempotency-Key)
+  API-&gt;&gt;DB: BEGIN
+  API-&gt;&gt;DB: create new products + aliases
+  API-&gt;&gt;DB: INSERT purchase_doc + doc_lines
+  API-&gt;&gt;DB: INSERT stock_movements (IN), update onHand, avgCost
+  API-&gt;&gt;DB: price_history + update purchasePrice
+  API-&gt;&gt;DB: ledger (supplier payable), audit_log
+  API-&gt;&gt;DB: scan.status=CONFIRMED
+  API-&gt;&gt;DB: COMMIT
+  API--&gt;&gt;PWA: result (stock before → after, new products)
+</pre></div></div>
+<div class="diagram"><h2>Sequence Diagram – Sale scan (Stock OUT + receipt)</h2><p class="src">Source: docs/uml/04-sequence-sale.mmd</p><div class="box"><pre class="mermaid">sequenceDiagram
+  autonumber
+  actor SM as Salesman
+  participant PWA as Mobile PWA
+  participant API as API Server
+  participant Q as Worker
+  participant AI as Vision AI
+  participant DB as PostgreSQL
+  participant RCP as Receipt Service
+  participant WA as WhatsApp / Printer
+  SM-&gt;&gt;PWA: Choose "Sale (Stock OUT)", add bill pages
+  PWA-&gt;&gt;API: POST /scans {type: sale} + pages
+  API-&gt;&gt;Q: enqueue extract(scanId)
+  par each page in parallel
+    Q-&gt;&gt;AI: extract(page)
+    AI--&gt;&gt;Q: lines + confidence
+  end
+  Q-&gt;&gt;Q: merge pages, validate totals
+  Q-&gt;&gt;DB: match products, load onHand + salePrice
+  Q-&gt;&gt;DB: flag lines where qty &gt; onHand
+  Q--&gt;&gt;PWA: NEEDS_REVIEW
+  SM-&gt;&gt;PWA: Fix flagged rows, select customer, payment mode
+  alt qty &gt; stock and negative stock not allowed
+    PWA--&gt;&gt;SM: Confirm blocked - reduce qty or record purchase
+  else OK
+    SM-&gt;&gt;PWA: Confirm
+    PWA-&gt;&gt;API: POST /scans/{id}/confirm
+    API-&gt;&gt;DB: BEGIN, sale_doc + lines, OUT movements (COGS=avgCost)
+    API-&gt;&gt;DB: payment / receivable ledger, audit, COMMIT
+    API-&gt;&gt;RCP: build receipt (next receipt no.)
+    RCP--&gt;&gt;API: PDF + link
+    API--&gt;&gt;PWA: remaining stock, low-stock list, receipt
+    SM-&gt;&gt;WA: Share PDF / print thermal
+  end
+</pre></div></div>
+<div class="diagram"><h2>Activity Diagram – End-to-end scan flow</h2><p class="src">Source: docs/uml/05-activity-scan.mmd</p><div class="box"><pre class="mermaid">flowchart TD
+  A([Start]) --&gt; B{Scan type?}
+  B --&gt;|Purchase| C[Capture supplier letterpad pages]
+  B --&gt;|Sale| C2[Capture sales bill pages]
+  C --&gt; D
+  C2 --&gt; D
+  D{Photo quality OK?} --&gt;|No| E[Warn: retake] --&gt; D
+  D --&gt;|Yes| F{Online?}
+  F --&gt;|No| G[Queue on device] --&gt; F
+  F --&gt;|Yes| H[Upload + store photos]
+  H --&gt; I{AI key configured?}
+  I --&gt;|No| J[Demo/manual mode: empty editable rows]
+  I --&gt;|Yes| K[Vision AI extraction per page]
+  K --&gt; L{AI success?}
+  L --&gt;|No| M[Status FAILED: retry or manual] --&gt; I
+  L --&gt;|Yes| N[Validate totals, normalise units, match products]
+  N --&gt; O[Review screen]
+  J --&gt; O
+  O --&gt; P{All rows matched and valid?}
+  P --&gt;|No| Q[User edits / creates product / saves alias] --&gt; P
+  P --&gt;|Yes| R{Sale and qty &gt; stock?}
+  R --&gt;|Yes, blocked| Q
+  R --&gt;|No| S{Duplicate bill?}
+  S --&gt;|User cancels| Z([End])
+  S --&gt;|No / continue| T[Confirm: one DB transaction]
+  T --&gt; U[Post stock movements, prices, ledger, audit]
+  U --&gt; V{Sale?}
+  V --&gt;|Yes| W[Generate receipt, show remaining stock, share/print]
+  V --&gt;|No| X[Show stock before to after]
+  W --&gt; Y[Low-stock check and alerts]
+  X --&gt; Y
+  Y --&gt; Z
+</pre></div></div>
+<div class="diagram"><h2>State Machine – Scan lifecycle</h2><p class="src">Source: docs/uml/06-state-scan.mmd</p><div class="box"><pre class="mermaid">stateDiagram-v2
+  [*] --&gt; Draft : pages captured
+  Draft --&gt; Queued : submitted offline
+  Queued --&gt; Uploading : connection back
+  Draft --&gt; Uploading : submitted online
+  Uploading --&gt; Processing : photos stored
+  Uploading --&gt; Draft : upload error
+  Processing --&gt; NeedsReview : AI result validated
+  Processing --&gt; Failed : AI error / timeout
+  Failed --&gt; Processing : retry
+  Failed --&gt; NeedsReview : continue manually
+  NeedsReview --&gt; NeedsReview : edit rows (autosave)
+  NeedsReview --&gt; Confirmed : confirm (transaction OK)
+  NeedsReview --&gt; Discarded : user discards
+  Confirmed --&gt; [*]
+  Discarded --&gt; [*]
+</pre></div></div>
+<div class="diagram"><h2>State Machine – Purchase/Sale document</h2><p class="src">Source: docs/uml/07-state-document.mmd</p><div class="box"><pre class="mermaid">stateDiagram-v2
+  [*] --&gt; Posted : confirm scan / manual entry
+  Posted --&gt; PartiallyReturned : return some lines
+  PartiallyReturned --&gt; PartiallyReturned : further return
+  PartiallyReturned --&gt; FullyReturned : all qty returned
+  Posted --&gt; FullyReturned : full return
+  Posted --&gt; Voided : owner voids with reason (reversing movements)
+  PartiallyReturned --&gt; Voided : owner voids remainder
+  state Posted {
+    [*] --&gt; Unpaid
+    Unpaid --&gt; PartPaid : payment
+    PartPaid --&gt; Paid : balance cleared
+    Unpaid --&gt; Paid : full payment
+  }
+  Voided --&gt; [*]
+  FullyReturned --&gt; [*]
+</pre></div></div>
+<div class="diagram"><h2>Activity Diagram – Product name matching</h2><p class="src">Source: docs/uml/08-activity-matching.mmd</p><div class="box"><pre class="mermaid">flowchart TD
+  A[Raw name from AI] --&gt; B["Normalise: lower case, remove punctuation,&lt;br/&gt;unify sizes and units (1in = 1 inch, half = 0.5)"]
+  B --&gt; C{Exact alias hit?}
+  C --&gt;|Yes| OK[Matched - score 1.0]
+  C --&gt;|No| D{Exact product name?}
+  D --&gt;|Yes| OK
+  D --&gt;|No| E["Fuzzy search: trigram + token sort&lt;br/&gt;size/number tokens must match"]
+  E --&gt; F{"Best score &gt;= 0.85 and&lt;br/&gt;gap to 2nd &gt;= 0.1?"}
+  F --&gt;|Yes| SUG[Auto-match, show score]
+  F --&gt;|No| G{"Score 0.6 - 0.85?"}
+  G --&gt;|Yes| H[Show top 3 suggestions - user picks]
+  G --&gt;|No| I[Mark NEW - user creates product]
+  H --&gt; J[Save raw text as alias]
+  I --&gt; J
+  SUG --&gt;|user changes match| J
+</pre></div></div>
+<div class="diagram"><h2>Component Diagram</h2><p class="src">Source: docs/uml/09-component.mmd</p><div class="box"><pre class="mermaid">flowchart LR
+  subgraph Client["Client - PWA (React)"]
+    UI["Screens: Dashboard, Scan, Review,&lt;br/&gt;Products, Reports, Settings"]
+    CAM[Camera + image preprocessing]
+    OFF[Offline queue - IndexedDB]
+    PRN[Print / Share module]
+  end
+  subgraph Server["API Server - Node.js / NestJS"]
+    AUTH[Auth and Tenancy]
+    SCAN[Scan Service]
+    EXT[Extraction Orchestrator]
+    MATCH[Product Matching Engine]
+    INV[Inventory and Costing Service]
+    DOC["Documents: Purchase / Sale / Return / Adjust"]
+    PARTY[Parties and Payments]
+    RCPT[Receipt Generator - PDF]
+    RPT[Reports and Excel Export]
+    AUD[Audit Log]
+    subgraph AIA["AI Adapter - interface"]
+      OA[OpenAI adapter]
+      GA[Gemini adapter]
+      MA[Manual / Demo adapter]
+    end
+  end
+  WK[Background Worker + Queue]
+  DB[(PostgreSQL)]
+  OS[(Object Storage)]
+  EXTAI[[Vision AI APIs]]
+  UI --&gt; AUTH
+  CAM --&gt; SCAN
+  OFF --&gt; SCAN
+  SCAN --&gt; WK --&gt; EXT --&gt; AIA --&gt; EXTAI
+  EXT --&gt; MATCH
+  UI --&gt; DOC --&gt; INV
+  DOC --&gt; PARTY
+  DOC --&gt; RCPT --&gt; PRN
+  UI --&gt; RPT
+  SCAN --&gt; OS
+  RCPT --&gt; OS
+  INV --&gt; DB
+  DOC --&gt; DB
+  MATCH --&gt; DB
+  AUD --&gt; DB
+  DOC --&gt; AUD
+</pre></div></div>
+<div class="diagram"><h2>Deployment Diagram</h2><p class="src">Source: docs/uml/10-deployment.mmd</p><div class="box"><pre class="mermaid">flowchart TB
+  subgraph Device["device: Android phone / Counter PC"]
+    B[execution env: Chrome PWA]
+    P[device: Thermal printer 58/80mm]
+  end
+  subgraph Cloud["cloud: VPS / Container host"]
+    LB[node: Reverse proxy - HTTPS, rate limit]
+    APP[container: API server x2]
+    WRK["container: Worker x1..n"]
+    RQ[(container: Redis - queue/cache)]
+    PG[(node: PostgreSQL - daily backup + PITR)]
+  end
+  R2[(service: S3/R2 object storage - photos, PDFs)]
+  AIS[[service: OpenAI / Gemini API]]
+  WAS[[service: WhatsApp share]]
+  B -- HTTPS/JSON --&gt; LB --&gt; APP
+  APP --&gt; RQ --&gt; WRK
+  APP --&gt; PG
+  WRK --&gt; PG
+  APP -- signed URLs --&gt; R2
+  B -- direct upload via signed URL --&gt; R2
+  WRK -- HTTPS --&gt; AIS
+  B --&gt; P
+  B --&gt; WAS
+</pre></div></div>
+<div class="diagram"><h2>Entity Relationship Diagram (database)</h2><p class="src">Source: docs/uml/11-erd.mmd</p><div class="box"><pre class="mermaid">erDiagram
+  SHOP ||--o{ USER : has
+  SHOP ||--o{ PRODUCT : owns
+  SHOP ||--o{ PARTY : has
+  SHOP ||--o{ SCAN : has
+  SHOP ||--o{ DOCUMENT : has
+  CATEGORY ||--o{ PRODUCT : groups
+  PRODUCT ||--o{ PRODUCT_ALIAS : "known as"
+  PRODUCT ||--o{ PRODUCT_UNIT : converts
+  PRODUCT ||--o{ PRICE_HISTORY : tracks
+  PRODUCT ||--o{ STOCK_MOVEMENT : moves
+  SCAN ||--|{ SCAN_PAGE : contains
+  SCAN ||--o{ SCAN_LINE : extracts
+  SCAN |o--o| DOCUMENT : "confirmed into"
+  SCAN ||--o{ AI_CALL_LOG : logs
+  SCAN_LINE }o--o| PRODUCT : "matched to"
+  PARTY ||--o{ DOCUMENT : "party of"
+  PARTY ||--o{ PAYMENT : makes
+  DOCUMENT ||--|{ DOC_LINE : contains
+  DOC_LINE }o--|| PRODUCT : for
+  DOC_LINE ||--|| STOCK_MOVEMENT : posts
+  DOCUMENT ||--o| RECEIPT : prints
+  DOCUMENT ||--o{ LEDGER_ENTRY : creates
+  USER ||--o{ AUDIT_LOG : performs
+  SHOP ||--o{ DAY_CLOSING : closes
+  SHOP ||--o{ EXPENSE : spends
+  DAY_CLOSING ||--o{ EXPENSE : includes
+  USER ||--o{ DAY_CLOSING : "closed by"
+
+  DAY_CLOSING {
+    uuid id PK
+    uuid shop_id FK
+    date business_date
+    string status
+    numeric opening_cash
+    numeric sales_total
+    numeric sales_cash
+    numeric sales_bank
+    numeric sales_credit
+    numeric cogs
+    numeric gross_profit
+    numeric expenses_total
+    numeric net_profit
+    numeric purchases_total
+    numeric wasooli
+    numeric supplier_paid_cash
+    numeric expected_cash
+    numeric counted_cash
+    numeric difference
+    string note
+    uuid closed_by FK
+    timestamptz closed_at
+  }
+  EXPENSE {
+    uuid id PK
+    uuid shop_id FK
+    date business_date
+    string head
+    numeric amount
+    string paid_from
+    string note
+    string photo_key
+    uuid user_id FK
+  }
+
+  SHOP {
+    uuid id PK
+    string name
+    string phone
+    string ntn
+    jsonb settings
+  }
+  USER {
+    uuid id PK
+    uuid shop_id FK
+    string name
+    string phone
+    string password_hash
+    string role
+    bool active
+  }
+  CATEGORY {
+    uuid id PK
+    uuid shop_id FK
+    string name
+  }
+  PRODUCT {
+    uuid id PK
+    uuid shop_id FK
+    uuid category_id FK
+    string sku
+    string name
+    string base_unit
+    numeric purchase_price
+    numeric sale_price
+    numeric avg_cost
+    numeric on_hand
+    numeric min_level
+    bool active
+  }
+  PRODUCT_ALIAS {
+    uuid id PK
+    uuid product_id FK
+    string text
+    string normalized
+    int times_used
+  }
+  PRODUCT_UNIT {
+    uuid product_id FK
+    string unit
+    numeric factor_to_base
+  }
+  PRICE_HISTORY {
+    uuid id PK
+    uuid product_id FK
+    string type
+    numeric old_price
+    numeric new_price
+    uuid doc_id FK
+    timestamptz at
+  }
+  PARTY {
+    uuid id PK
+    uuid shop_id FK
+    string name
+    string phone
+    string type
+    numeric opening_balance
+  }
+  SCAN {
+    uuid id PK
+    uuid shop_id FK
+    uuid user_id FK
+    string type
+    string status
+    numeric read_total
+    uuid document_id FK
+    timestamptz created_at
+  }
+  SCAN_PAGE {
+    uuid id PK
+    uuid scan_id FK
+    int page_no
+    string image_key
+    string phash
+  }
+  SCAN_LINE {
+    uuid id PK
+    uuid scan_id FK
+    int line_no
+    string raw_name
+    numeric qty
+    string unit
+    numeric rate
+    numeric line_total
+    real confidence
+    jsonb bbox
+    uuid product_id FK
+    real match_score
+    bool flagged
+  }
+  DOCUMENT {
+    uuid id PK
+    uuid shop_id FK
+    string kind
+    string doc_no
+    date doc_date
+    uuid party_id FK
+    string status
+    numeric total
+    numeric discount
+    numeric paid
+    string payment_mode
+    uuid voids_doc_id FK
+  }
+  DOC_LINE {
+    uuid id PK
+    uuid document_id FK
+    uuid product_id FK
+    numeric qty
+    string unit
+    numeric qty_base
+    numeric rate
+    numeric amount
+  }
+  STOCK_MOVEMENT {
+    uuid id PK
+    uuid product_id FK
+    uuid doc_line_id FK
+    string type
+    numeric qty_base
+    numeric unit_cost
+    numeric balance_after
+    timestamptz at
+  }
+  RECEIPT {
+    uuid id PK
+    uuid document_id FK
+    string receipt_no
+    string pdf_key
+  }
+  PAYMENT {
+    uuid id PK
+    uuid party_id FK
+    uuid document_id FK
+    numeric amount
+    string mode
+    date paid_on
+  }
+  LEDGER_ENTRY {
+    uuid id PK
+    uuid document_id FK
+    string account
+    numeric debit
+    numeric credit
+  }
+  AI_CALL_LOG {
+    uuid id PK
+    uuid scan_id FK
+    string provider
+    string model
+    int tokens_in
+    int tokens_out
+    numeric cost_usd
+    int ms
+  }
+  AUDIT_LOG {
+    uuid id PK
+    uuid user_id FK
+    string action
+    string entity
+    jsonb before
+    jsonb after
+    timestamptz at
+  }
+</pre></div></div>
+<div class="diagram"><h2>Package Diagram (code layers)</h2><p class="src">Source: docs/uml/12-package.mmd</p><div class="box"><pre class="mermaid">flowchart TB
+  subgraph presentation["package: presentation"]
+    pages[pages] --- components[components] --- pwa[pwa / offline]
+  end
+  subgraph application["package: application"]
+    scanUC[scan use-cases] --- docUC[document use-cases] --- reportUC[report use-cases]
+  end
+  subgraph domain["package: domain"]
+    inventory[inventory + costing] --- matching[matching] --- parties[parties] --- documents[documents]
+  end
+  subgraph infrastructure["package: infrastructure"]
+    repo[repositories - PostgreSQL] --- ai[ai adapters] --- storage[object storage] --- queue[queue] --- pdf[pdf / excel]
+  end
+  presentation --&gt; application --&gt; domain
+  application --&gt; infrastructure
+  infrastructure -. implements interfaces .-&gt; domain
+</pre></div></div>
+<div class="diagram"><h2>State Machine – Business day (daily closing)</h2><p class="src">Source: docs/uml/13-state-day.mmd</p><div class="box"><pre class="mermaid">stateDiagram-v2
+  [*] --&gt; Open : first sale / scan of the day (opening cash = yesterday's counted cash)
+  Open --&gt; Open : sales, purchases, expenses, wasooli
+  Open --&gt; Counting : owner opens "Aaj ka hisaab"
+  Counting --&gt; Open : back (nothing saved)
+  Counting --&gt; Closed : counted cash entered, Din band karein
+  Closed --&gt; Reopened : owner reopens with reason (audit log)
+  Reopened --&gt; Closed : re-close, totals recalculated
+  Closed --&gt; [*]
+</pre></div></div>
+</section>
+<section id="research"><h1>Part C – Research and feasibility</h1><div id="res-body"></div></section>
+</main>
+<script id="srs-md" type="text/plain"># Software Requirements Specification (SRS)
+## Shop Inventory ERP – Photo Scan
+
+| Item | Value |
+|---|---|
+| Product | Shop Inventory ERP – Photo Scan |
+| Company | Quantum Synergy Solutions (QSSols) |
+| Document | SRS v1.1 (draft for review) – changes listed in §11 |
+| Date | 14 Nov 2026 (v1.0: 10 Nov 2026) |
+| Standard followed | ISO/IEC/IEEE 29148:2018 (successor of IEEE 830) |
+| Source | `reference/shop-inventory-erp-photo-scan.pdf` (6-page tool proposal) |
+| Companion files | `docs/uml/*.mmd` (UML), `research/research-findings.md` (market + AI research), clickable phone prototype v0.2 |
+
+Priority keys: **M** = Must (v1 launch), **S** = Should (v1.1), **C** = Could (later).
+Requirements marked **[ADDED]** are not in the proposal PDF; they were added during analysis because a real shop cannot run without them.
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose
+This document defines what the Shop Inventory ERP – Photo Scan system must do, for the QSSols development team, testers, and the shop owner who signs off on scope. Every requirement has an ID so it can be traced to UML diagrams, test cases and tickets.
+
+### 1.2 Scope
+The system turns two paper documents that small shops already produce into digital inventory records:
+
+1. **Purchase (Stock IN):** photo of a supplier's handwritten letterpad list → AI extraction → human review → stock added, prices updated, ledger + Excel row.
+2. **Sale (Stock OUT):** photo of the shop's handwritten sales bill (up to ~100 lines, multi-page) → AI extraction → human review with stock warnings → stock deducted, digital receipt, ledger + Excel row.
+
+Around these two flows sit the ERP modules: Dashboard, Photo Scan Centre, Products, Stock Movements, Receipts, Low-Stock Alerts, Reports + Excel, Suppliers/Customers, Returns and Adjustments, Daily Closing and Expenses, Settings/API.
+
+**Out of scope for v1:** full double-entry accounting, payroll, e-commerce storefront, multi-warehouse transfers, barcode label printing, FBR POS real-time integration (listed as C, see §3.9).
+
+### 1.3 Definitions
+| Term | Meaning |
+|---|---|
+| Letterpad | Supplier's printed pad on which items, quantity and price are written by hand |
+| Scan | One upload session: 1..n page photos of one bill, plus its AI result and review state |
+| Scan line / Draft line | One extracted row (name, qty, unit, rate, total) before confirmation |
+| Confirm | Human action that turns a reviewed scan into stock movements |
+| Stock movement | Immutable record of +qty (IN) or −qty (OUT/adjust) for one product |
+| Alias | An alternate written name that maps to a product ("1\" elbow" → "Elbow Joint 1 inch") |
+| Vision AI | External multimodal model (OpenAI / Gemini / other) that reads the photo |
+| Demo mode | Scan flow with no AI key: review screen opens empty or with sample rows for manual entry |
+| Udhaar | Credit sale – customer pays later |
+
+### 1.4 References
+- ISO/IEC/IEEE 29148:2018 – Requirements engineering
+- OMG UML 2.5.1
+- QSSols proposal PDF (reference folder)
+- Research notes: `research/research-findings.md`
+
+---
+
+## 2. Overall description
+
+### 2.1 Product perspective
+A new, self-contained web application (mobile-first PWA) with a server API, a relational database, object storage for photos, and a pluggable Vision AI adapter. It replaces the paper register and manual Excel typing. See component and deployment diagrams (`uml/09-component.mmd`, `uml/10-deployment.mmd`).
+
+### 2.2 Product functions (summary)
+- F1 Capture/upload bill photos (camera or gallery, multi-page)
+- F2 AI extraction of line items and header fields into structured data
+- F3 Review screen: editable rows, confidence highlighting, product matching, stock warnings, totals check
+- F4 Confirm → stock movements, price updates, auto-create products, ledger, Excel row
+- F5 Digital receipt (view/print/share via WhatsApp/PDF)
+- F6 Inventory management (products, categories, units, aliases, min-stock levels)
+- F7 Dashboard and low-stock alerts
+- F8 Reports and CSV/XLSX export
+- F9 Suppliers and customers with history and balances
+- F10 Settings: shop profile, users/roles, AI provider key, backup
+- F11 Returns, voids and stock adjustments
+- F12 Daily closing: expenses, profit, cash (galla) count and day lock
+
+### 2.3 User classes
+| Actor | Description | Skill level |
+|---|---|---|
+| Owner / Admin | Shop owner. Full access, settings, reports, user management | Low–medium tech; Android phone; Urdu/English |
+| Salesman / Counter staff | Scans sale bills, prints receipts. Cannot change prices or delete records | Low tech |
+| Store keeper / Purchaser | Scans purchase lists, receives stock | Low tech |
+| Accountant (read-only) | Downloads reports/Excel | Medium |
+| Vision AI service | External system actor | – |
+| WhatsApp / Printer | External system actors for receipt delivery | – |
+| QSSols Super-admin **[ADDED]** | Multi-tenant ops: onboarding shops, plans, support | High |
+
+### 2.4 Operating environment
+- Client: Android Chrome (primary, phone camera), desktop Chrome/Edge (counter PC), iOS Safari (secondary). PWA installable.
+- Server: Node.js (or equivalent) API on Linux, PostgreSQL, S3-compatible object storage.
+- Network: unstable mobile internet must be tolerated (see NFR-REL).
+
+### 2.5 Design and implementation constraints
+- C-1 The AI provider must be swappable (OpenAI, Gemini, others) behind one adapter interface.
+- C-2 AI output must be strict JSON matching a schema; free text is rejected.
+- C-3 Stock must never change without a human Confirm (from proposal: "review before stock moves").
+- C-4 All money in PKR stored as integer paisa (or decimal(14,2)); no floating point.
+- C-5 Stock movements are append-only; corrections are new movements (reversal), never edits.
+- C-6 UI language: Urdu (Nastaliq, default) and English with a one-tap switch, as in prototype v0.2. Product names, numbers and amounts stay in Latin script and Western digits in both languages. Roman Urdu labels are S priority. **[CHANGED v1.1 – needs owner confirmation]**
+
+### 2.6 Assumptions and dependencies
+- A-1 Shop has a smartphone with a camera of at least 8 MP.
+- A-2 A vision AI API key is available (shop's own or QSSols-managed).
+- A-3 Handwritten bills are mostly English/Roman Urdu with digits; Urdu-script bills will have lower accuracy (see research).
+- A-4 The proposal claims "the full system is built and working"; this SRS describes the target system and must be checked against the existing build (gap analysis is a next step).
+
+---
+
+## 3. Specific requirements
+
+### 3.1 Authentication, shops and users
+| ID | Requirement | P |
+|---|---|---|
+| FR-AUTH-01 | Users log in with phone number/email + password; session expires after 30 days of inactivity on a trusted device. | M |
+| FR-AUTH-02 **[ADDED]** | Roles: Owner, Salesman, Storekeeper, Accountant. Permissions per §3.11 matrix. | M |
+| FR-AUTH-03 **[ADDED]** | Each shop is a tenant; data of one shop is never visible to another. | M |
+| FR-AUTH-04 | Owner can add/disable users and reset their passwords. | M |
+| FR-AUTH-05 | Optional 4-digit PIN for quick switching between counter staff on a shared device. | C |
+
+### 3.2 Photo Scan Centre – capture
+| ID | Requirement | P |
+|---|---|---|
+| FR-SCAN-01 | User chooses scan type: **Purchase (Stock IN)** or **Sale (Stock OUT)**. | M |
+| FR-SCAN-02 | User takes a photo with the camera or picks from gallery (JPEG/PNG/HEIC/WebP, max 15 MB each). | M |
+| FR-SCAN-03 | A scan may hold 1–10 pages; user can add, reorder and remove pages before submitting. | M |
+| FR-SCAN-04 | Client compresses images to max 2,000 px long side before upload, keeping the original if the setting "keep originals" is on. | M |
+| FR-SCAN-05 | Client-side quality check warns about blur, darkness or a tilted page before upload. | S |
+| FR-SCAN-06 | Auto-crop and de-skew of the page (perspective correction). | S |
+| FR-SCAN-07 **[ADDED]** | If offline, the scan is queued on the device and uploaded automatically when the connection returns. | S |
+| FR-SCAN-08 | Every uploaded photo is stored and permanently linked to its scan and resulting movements (proof). | M |
+| FR-SCAN-09 **[ADDED]** | Duplicate detection: warn if the same image (perceptual hash) or same supplier+date+total was already confirmed. | S |
+
+### 3.3 AI extraction
+| ID | Requirement | P |
+|---|---|---|
+| FR-AI-01 | System sends page images to the configured Vision AI with a schema that returns: header (party name, bill no, date) and lines (raw name, qty, unit, rate, line total), and bill total. | M |
+| FR-AI-02 | Each line carries a confidence score (0–1) and its page number + approximate position on the page. | M |
+| FR-AI-03 | Pages of one scan are processed in parallel and merged in page order. | M |
+| FR-AI-04 | Validation after extraction: qty × rate vs line total, Σ line totals vs bill total. Mismatches flag the row/bill. | M |
+| FR-AI-05 | Units are normalised to the master list (pcs, box, dozen, metre, foot, kg, set, roll, packet). | M |
+| FR-AI-06 | Extraction runs asynchronously; user sees progress and is notified when ready. Target: ≤ 30 s per page at p90. | M |
+| FR-AI-07 | On AI failure or timeout the scan moves to state *Failed* with a retry button; user can also continue in manual (demo) mode. | M |
+| FR-AI-08 | **Demo mode:** when no AI key is configured, the review screen opens with empty editable rows (and the photo beside them) so the flow still works. | M |
+| FR-AI-09 | Token usage and cost of every AI call are logged per shop. | M |
+| FR-AI-10 **[ADDED]** | A monthly AI scan limit per plan; owner sees remaining scans. | S |
+| FR-AI-11 | Recently used product names of the shop are sent as hints to improve reading of known items. | S |
+| FR-AI-12 **[ADDED – research]** | Long pages (&gt; 25 rows) are split into overlapping horizontal strips before extraction; the AI must return the written serial/row number so missing rows can be detected. | M |
+| FR-AI-13 **[ADDED – research]** | Row-count check: number of extracted rows vs serial numbers on the paper; a gap flags the bill "rows may be missing" on the review screen. | M |
+| FR-AI-14 **[ADDED – research]** | If totals check fails, run one automatic second pass with a different model and highlight rows where the two passes disagree. | S |
+| FR-AI-15 **[ADDED – research]** | Default AI access is a QSSols-hosted key with a per-plan scan quota; shop's own key (BYO) is optional in Settings. | M |
+| FR-AI-16 **[ADDED – research]** | Owner gives one-time consent that bill photos are processed by a foreign AI provider; photo retention period is configurable. | M |
+
+### 3.4 Review and product matching
+| ID | Requirement | P |
+|---|---|---|
+| FR-REV-01 | Review screen shows the photo (zoomable) and the extracted rows side by side (stacked on phone); tapping a row highlights its area on the photo. | M |
+| FR-REV-02 | Every field of every row is editable; rows can be added, deleted and split. | M |
+| FR-REV-03 | Rows with confidence below the threshold (default 0.85), total mismatch, or no product match are highlighted. | M |
+| FR-REV-04 | Each row is auto-matched to a product using alias table → exact → fuzzy match (score shown). User may pick another product or "Create new product". | M |
+| FR-REV-05 | When the user corrects a match, the written name is saved as an alias of that product, so the next scan matches automatically. | M |
+| FR-REV-06 | Purchase scan: user selects or creates the supplier; Sale scan: user selects or creates the customer (or "Walk-in"). | M |
+| FR-REV-07 | Sale scan: a row whose qty is more than current stock is flagged; Confirm is blocked unless the user ticks "allow negative stock" (setting, Owner only). | M |
+| FR-REV-08 | Sale scan: sale price defaults to the written rate; if no rate is written, the product's sale price is used. Difference from list price is shown. | M |
+| FR-REV-09 | Purchase scan: if the written purchase rate differs from the stored one, the row shows old → new price; on confirm the purchase price is updated (and history saved). | M |
+| FR-REV-10 | New products created from review must get a category and sale price (suggested = purchase price × default markup %). | M |
+| FR-REV-11 | Draft review is auto-saved; user can leave and resume later. | M |
+| FR-REV-12 **[ADDED]** | Payment section on Sale: cash / bank / JazzCash / Easypaisa / credit (udhaar) / partial, with amount received. | M |
+| FR-REV-13 **[ADDED]** | Discount (per line and on bill total) and optional tax line. | S |
+| FR-REV-14 **[ADDED – research]** | Rows are shown with the cropped photo strip beside each row; low-confidence and flagged rows are sorted to the top. | M |
+| FR-REV-15 **[ADDED – research]** | A product is never auto-created without the user's confirmation on the review screen. | M |
+
+### 3.5 Confirm and stock posting
+| ID | Requirement | P |
+|---|---|---|
+| FR-STK-01 | Confirm runs as one database transaction: create the purchase/sale document, its lines, one stock movement per line, price updates, ledger entries. All-or-nothing. | M |
+| FR-STK-02 | Stock on hand = Σ movements of the product; a cached quantity is kept on the product and updated in the same transaction. | M |
+| FR-STK-03 | Stock value is calculated by weighted average cost (moving average) on every Stock IN. | M |
+| FR-STK-04 | After a sale is confirmed the screen shows remaining stock per line and any low-stock items. | M |
+| FR-STK-05 | A confirmed document cannot be edited. It can be **voided** (creates reversing movements) by Owner, with a reason. | M |
+| FR-STK-06 **[ADDED]** | Sales return and purchase return documents (manual or from a scan) with stock reversal. | M |
+| FR-STK-07 **[ADDED]** | Stock adjustment (damage, count correction) with reason; Owner only. | M |
+| FR-STK-08 **[ADDED]** | Opening stock import from Excel/CSV during onboarding. | M |
+| FR-STK-09 | Manual Stock IN / OUT without a photo (same review screen, no photo). | M |
+| FR-STK-10 | Unit conversion per product (e.g. 1 box = 10 pcs); stock is kept in the base unit. | S |
+| FR-STK-11 **[ADDED]** | Physical stock count (cycle count) sheet: print, enter counted qty, post differences as adjustments. | C |
+
+### 3.6 Receipts
+| ID | Requirement | P |
+|---|---|---|
+| FR-RCP-01 | Every confirmed sale generates a receipt with shop name/logo, address, phone, receipt no., date, customer, items, qty, rate, line totals, discount, total, paid, balance. | M |
+| FR-RCP-02 | Receipt can be printed on A4/A5 and 58/80 mm thermal printers. | M |
+| FR-RCP-03 | Receipt can be shared as PDF/image via WhatsApp share sheet or link. | M |
+| FR-RCP-04 | Receipt numbers are sequential per shop, never reused. | M |
+| FR-RCP-05 | Reprint any past receipt; voided receipts are watermarked "VOID". | M |
+| FR-RCP-06 | QR code on the receipt that opens a read-only online copy. | C |
+| FR-RCP-07 **[ADDED – research]** | Receipt footer states "This is not an FBR-verified tax invoice" until FBR POS integration (FR-RPT-07) is live. | M |
+
+### 3.7 Inventory / products
+| ID | Requirement | P |
+|---|---|---|
+| FR-PRD-01 | Product fields: name, SKU (auto), category, base unit, purchase price, sale price, min-stock level, aliases, active flag, image (optional). | M |
+| FR-PRD-02 | Search by name/alias/SKU with typo tolerance; filter by category, low stock. | M |
+| FR-PRD-03 | Manual add/edit; deactivate instead of delete when movements exist. | M |
+| FR-PRD-04 | Price history per product (purchase and sale). | M |
+| FR-PRD-05 | Merge two duplicate products (moves movements and aliases). | S |
+| FR-PRD-06 | Category management with preset categories: Plumbing, Sanitary, Electrical, Crockery, Hardware, General. | M |
+| FR-PRD-07 **[ADDED – research]** | Price levels per product: retail and wholesale sale price; customer can be tagged wholesale. | S |
+| FR-PRD-08 **[ADDED – research]** | Per-supplier alias table (the same supplier writes the same item the same way). | S |
+
+### 3.8 Dashboard and alerts
+| ID | Requirement | P |
+|---|---|---|
+| FR-DSH-01 | Cards: total products, stock value (Rs), today's purchases, today's sales, low-stock count, pending reviews. | M |
+| FR-DSH-02 | Recent scans list with status (Processing, Needs review, Confirmed, Failed). | M |
+| FR-DSH-03 | Low-stock alert when on-hand ≤ min level; list view + badge. | M |
+| FR-DSH-04 | Daily summary push / WhatsApp message to owner (sales, purchases, low stock). | S |
+| FR-DSH-05 | Gross profit for period (sales − weighted cost of goods sold). | S |
+
+### 3.9 Reports and Excel
+| ID | Requirement | P |
+|---|---|---|
+| FR-RPT-01 | Stock IN/OUT ledger with filters (date range, product, party, type). | M |
+| FR-RPT-02 | Purchase report per supplier and per day/month; sales report per customer and per day/month. | M |
+| FR-RPT-03 | Export CSV and XLSX; one row per line item with: date, type, doc no, party, product, qty, unit, rate, amount, running balance. | M |
+| FR-RPT-04 | Stock valuation report (qty × avg cost) at any date. | M |
+| FR-RPT-05 | Party ledger: supplier payable and customer receivable balances. **[ADDED]** | M |
+| FR-RPT-06 | Scheduled email/Drive export of the Excel file (daily/weekly). | C |
+| FR-RPT-07 | FBR-compatible sales tax invoice fields and POS integration for Tier-1 retailers. | C |
+
+### 3.10 Suppliers and customers
+| ID | Requirement | P |
+|---|---|---|
+| FR-PTY-01 | Party record: name, phone, address, type (supplier/customer/both), opening balance. | M |
+| FR-PTY-02 | History per party: all documents and payments. | M |
+| FR-PTY-03 **[ADDED]** | Record payments received/paid against parties (cash/bank), updating balances. | M |
+| FR-PTY-04 | Fuzzy match of the party name read from the photo to existing parties. | S |
+
+### 3.10a Daily closing, expenses and profit **[ADDED – owner request 11 Nov 2026]**
+Pakistani shops close the day by counting the *galla* (cash drawer) and checking the day's sale and profit. The system does this in one screen.
+
+Screen names: this section uses the working names "Aaj ka hisaab" and "Din band karein". In the UI (prototype v0.2) they appear as "ڈے اینڈ کلوزنگ / Day-end closing" and "دن بند کریں / Close the day".
+
+Terms used:
+| Term (Urdu) | Meaning | Formula |
+|---|---|---|
+| Sale (فروخت) | Total of confirmed sale bills for the day, after discounts and returns | Σ sale docs − sales returns |
+| Cost of goods sold / Laagat (لاگت) | What the sold items cost the shop | Σ (qty sold × weighted average cost at time of sale) |
+| Gross profit (مجموعی منافع) | Profit on goods only | Sale − Laagat |
+| Margin % | Gross profit as a share of sale | Gross profit ÷ Sale × 100 |
+| Expenses / Kharcha (خرچہ) | Day's running costs: tea, labour, rent share, electricity, transport | Σ expense entries |
+| Net profit (خالص منافع) | Profit after expenses | Gross profit − Expenses |
+| Udhaar diya (ادھار دیا) | Credit sales not paid today | Σ unpaid part of sale bills |
+| Wasooli (وصولی) | Old udhaar received from customers today | Σ customer payments |
+| Opening cash (شروع کا کیش) | Cash in the galla at the start of the day | Previous day's counted closing cash |
+| Expected cash (ہونا چاہیے) | Cash that should be in the galla | Opening + cash sales + wasooli in cash − cash expenses − cash paid to suppliers − cash refunds |
+| Counted cash (گنا ہوا کیش) | Cash the owner actually counts | Entered by user |
+| Short / excess (کم / زیادہ) | Difference | Counted − Expected |
+
+| ID | Requirement | P |
+|---|---|---|
+| FR-CLS-01 | "Aaj ka hisaab" screen shows, live for today: sale total and number of bills; split by cash, bank/JazzCash/Easypaisa and udhaar; laagat; gross profit and margin %; expenses; net profit. | M |
+| FR-CLS-02 | Same screen shows purchases of the day (stock IN value), payments made to suppliers (cash/bank), wasooli received, sales returns. | M |
+| FR-CLS-03 | Galla section: opening cash (carried from yesterday's closing), expected cash (formula above), input for counted cash, and live short/excess. The screen lists every part of the formula as its own line, including cash paid to suppliers and cash refunds, even when the amount is zero. | M |
+| FR-CLS-04 | "Din band karein" (close day) saves a DayClosing record with all totals, counted cash and difference, closed by and time; the counted cash becomes next day's opening cash. | M |
+| FR-CLS-05 | A closed day is locked: no new or changed document can be dated on it. Only the Owner can reopen it, with a reason; reopen and re-close are written to the audit log. | M |
+| FR-CLS-06 | Short/excess above a set limit (default Rs 500) requires a note before closing. | S |
+| FR-CLS-07 | Closing summary is shared to the owner as a WhatsApp message/PDF; optional automatic send at a set time if the day was not closed. | S |
+| FR-CLS-08 | Reminder if the previous day was not closed when the app opens. | S |
+| FR-CLS-09 | Monthly closing view: month totals of sale, laagat, gross profit, expenses by head, net profit; best-selling and most profitable items; export to Excel/PDF. | M |
+| FR-CLS-10 | Profit per product and per category for any date range. | S |
+| FR-EXP-01 | Add expense: amount, head (Tea/food, Labour, Rent, Electricity, Transport, Salary, Other), paid from (cash/bank), note, optional photo of the receipt. | M |
+| FR-EXP-02 | Expense heads are editable by the Owner; Salesman can add only cash expenses up to a set limit. | S |
+
+### 3.11 Settings, roles and audit
+| ID | Requirement | P |
+|---|---|---|
+| FR-SET-01 | Shop profile: name, logo, address, phone, NTN (optional), receipt footer text. | M |
+| FR-SET-02 | AI settings: provider, API key (stored encrypted, shown masked), model, confidence threshold, test-connection button. | M |
+| FR-SET-03 | Defaults: markup %, allow negative stock, low-stock default level, currency format, salesman may close the day (default off), salesman cash-expense limit, short/excess note limit (default Rs 500). | M |
+| FR-SET-04 **[ADDED]** | Audit log of every create/confirm/void/edit/price change/setting change: who, when, before/after. | M |
+| FR-SET-05 **[ADDED]** | Daily automatic database backup; owner can download a full export (Excel + photos zip). | M |
+
+Permission matrix (M = manage, V = view, – = none):
+
+| Function | Owner | Salesman | Storekeeper | Accountant |
+|---|---|---|---|---|
+| Sale scan + receipt | M | M | – | V |
+| Purchase scan | M | – | M | V |
+| Manual Stock IN / OUT * | M | OUT only | IN only | V |
+| Sales return * | M | M | – | V |
+| Purchase return * | M | – | M | V |
+| Products / prices | M | V | V (no edit price) | V |
+| Void / stock adjustment / opening stock import | M | – | – | – |
+| Parties and balances * | M | V (customers) | V (suppliers) | V |
+| Record party payment * | M | Customer receipts (wasooli) only | – | V |
+| Add expense * | M | Cash only, up to the limit (FR-EXP-02) | – | V |
+| Day closing screen * | M | View today; close only if the Owner allows it (FR-SET-03) | – | V |
+| Reopen a closed day * | M | – | – | – |
+| Dashboard / low-stock alerts * | M | V (no profit or stock value) | V (no profit or stock value) | V |
+| Reports / export | M | – | – | M |
+| Audit log * | M | – | – | V |
+| Settings / users / AI key | M | – | – | – |
+
+Rows marked * were added in v1.1 to cover functions that had requirements but no permission rule. Their values follow the use cases (UC-04, UC-10, UC-13, UC-14) and FR-EXP-02 where those say who acts; the rest are proposed defaults and need owner confirmation.
+
+---
+
+## 4. Non-functional requirements
+
+| ID | Category | Requirement | P |
+|---|---|---|---|
+| NFR-PERF-01 | Performance | API responses (non-AI) ≤ 500 ms p95; dashboard loads ≤ 2 s on 4G. | M |
+| NFR-PERF-02 | Performance | AI extraction ≤ 30 s per page p90; 100-line bill (2–3 pages) ready for review ≤ 90 s. | M |
+| NFR-PERF-03 | Performance | Review screen stays smooth with 150 rows on a mid-range Android phone. | M |
+| NFR-ACC-01 | AI quality | On the shop's own test set, ≥ 95 % of numeric fields and ≥ 90 % of product names correct before review; 100 % after review (human-confirmed). Measured in pilot. | M |
+| NFR-ACC-02 | AI quality | AI must never add a line that is not on the paper without flagging it (hallucination check via totals cross-check). | M |
+| NFR-REL-01 | Reliability | 99.5 % monthly uptime. | M |
+| NFR-REL-02 | Reliability | Confirm is idempotent: double-tap or retry never posts stock twice (idempotency key). | M |
+| NFR-REL-03 | Reliability | Offline queue for scans and read-only cached product list on device. | S |
+| NFR-SEC-01 | Security | HTTPS only; passwords hashed with Argon2/bcrypt; AI keys encrypted at rest (AES-256). | M |
+| NFR-SEC-02 | Security | Tenant isolation enforced in every query (row-level security or tenant filter in data layer). | M |
+| NFR-SEC-03 | Privacy | Photos are sent only to the configured AI provider; provider's "no training on API data" terms documented to the shop. | M |
+| NFR-SEC-04 | Security | Rate limiting and lockout after 5 failed logins. | M |
+| NFR-USE-01 | Usability | A first-time salesman completes a sale scan in ≤ 3 minutes after a 10-minute demo. | M |
+| NFR-USE-02 | Usability | Large touch targets (≥ 44 px); Urdu (Nastaliq, right-to-left) and English UI with a one-tap switch; numbers, amounts and product names in Latin script and Western digits (see C-6). | M |
+| NFR-USE-03 | Usability | Roman Urdu label set as a third language option. | S |
+| NFR-MNT-01 | Maintainability | AI provider behind an adapter interface; adding a provider needs no change outside the adapter. | M |
+| NFR-MNT-02 | Maintainability | ≥ 70 % unit-test coverage on stock posting, costing and matching logic. | M |
+| NFR-SCL-01 | Scalability | One shop: 20,000 products, 500 scans/day, 5 years of history without slowdown. | M |
+| NFR-DAT-01 | Data | Photos retained ≥ 5 years (or per plan); movements never hard-deleted. | M |
+| NFR-CST-01 | Cost | AI cost per scan tracked; target ≤ Rs 20 for a 100-line bill (research estimate Rs 3–20 at Nov 2026 prices; Gemini prices double on 1 Jan 2027). | S |
+
+---
+
+## 5. External interface requirements
+
+### 5.1 User interface
+Key screens: Login · Dashboard · New Scan (type → capture → pages) · Scan Processing · Review · Confirm Result · Receipt · Products list/detail · Stock Movements · Returns · Parties and Payments (Ledger) · Day-end Closing · Add Expense · Reports · Settings. Mobile-first, bottom navigation on phone, sidebar on desktop.
+
+### 5.2 Software interfaces
+| Interface | Purpose | Notes |
+|---|---|---|
+| Vision AI (OpenAI / Gemini / other) | Extract structured lines from photos | HTTPS JSON, structured-output schema, timeout 60 s, 2 retries with backoff |
+| Object storage (S3/R2) | Photos, receipt PDFs, exports | Signed URLs, private bucket |
+| WhatsApp | Share receipt | v1: OS share sheet / wa.me link; v2: WhatsApp Business API |
+| Email / push | Daily summary, alerts | S priority |
+| FBR POS API | Tax invoice reporting | C priority |
+
+### 5.3 Hardware interfaces
+Phone camera; 58/80 mm Bluetooth/USB thermal printers (ESC/POS) via browser print or a small print bridge; A4 printers.
+
+### 5.4 AI extraction contract (JSON schema, summary)
+```json
+{
+  "doc_type": "purchase|sale",
+  "party_name": "string|null",
+  "bill_no": "string|null",
+  "date": "YYYY-MM-DD|null",
+  "lines": [
+    { "line_no": 1, "raw_name": "string", "qty": 0, "unit": "string|null",
+      "rate": 0, "line_total": 0, "confidence": 0.0,
+      "page": 1, "bbox": [x, y, w, h] }
+  ],
+  "bill_total": 0,
+  "notes": "string|null"
+}
+```
+
+---
+
+## 6. Data requirements
+Main entities (full detail in `uml/11-erd.mmd` and `uml/02-class.mmd`): Shop, User, Role, Product, Category, Unit, ProductUnit, ProductAlias, PriceHistory, Party, Scan, ScanPage, ScanLine, PurchaseDoc, SaleDoc, ReturnDoc, AdjustmentDoc, DocLine, StockMovement, Payment, Receipt, LedgerEntry, DayClosing, Expense, AiCallLog, AuditLog, Setting (stored as `shop.settings`).
+
+Business rules:
+- BR-1 On-hand qty = Σ StockMovement.qty_base for the product.
+- BR-2 Avg cost after IN = (old_qty × old_avg + in_qty × in_rate) ÷ (old_qty + in_qty).
+- BR-3 COGS of a sale line = qty × avg cost at the time of sale (stored on the movement).
+- BR-4 Low stock when on-hand ≤ product.min_level (default from settings).
+- BR-5 A scan can be confirmed once; its state goes to Confirmed and it is linked to exactly one document.
+- BR-6 Void creates equal and opposite movements and ledger entries; the original stays visible.
+- BR-7 Customer balance = Σ credit sales − Σ payments received − returns.
+- BR-8 Expected cash = opening cash + cash sales + cash wasooli − cash expenses − cash paid to suppliers − cash refunds (see §3.10a).
+- BR-9 Net profit (day/month) = Σ sale − Σ COGS − Σ expenses. COGS uses the average cost stored on each OUT movement (BR-3), so past profit does not change when prices change later.
+- BR-10 A closed day accepts no new or edited documents until the Owner reopens it.
+
+---
+
+## 7. Use case specifications (key)
+
+### UC-01 Scan purchase list (Stock IN)
+- **Actor:** Storekeeper / Owner. **Pre:** logged in; supplier list photo available.
+- **Main flow:** 1) choose Purchase; 2) capture 1..n pages; 3) submit; 4) system stores photos and calls AI; 5) system validates totals, normalises units, matches products; 6) review screen opens; 7) user corrects rows, selects supplier, sets prices for new products; 8) Confirm; 9) system posts transaction (IN movements, avg cost, purchase price update, payable ledger, Excel row); 10) result screen.
+- **Alternates:** 4a AI fails → retry or manual mode. 5a total mismatch → bill flagged. 7a item not found → create new product. 8a duplicate bill warning → user cancels or continues.
+- **Post:** stock increased; scan Confirmed; photo linked.
+
+### UC-02 Scan sale bill (Stock OUT + receipt)
+- **Actor:** Salesman / Owner. **Main flow:** as UC-01 with type Sale, plus: 6a over-stock rows flagged; 7a payment mode entered; 9) OUT movements with COGS, receivable ledger if credit; 10) receipt generated; remaining stock and low-stock shown; 11) share/print receipt.
+- **Alternates:** 8a negative stock not allowed → user lowers qty or does a purchase first.
+
+### UC-13 Close the day (Din band karein)
+- **Actor:** Owner (or Salesman if allowed). **Pre:** day is open.
+- **Main flow:** 1) open "Aaj ka hisaab"; 2) system shows sale, laagat, profit, expenses, udhaar, wasooli and expected cash; 3) user adds any missing expense; 4) user counts the galla and enters counted cash; 5) system shows short/excess; 6) user taps "Din band karein"; 7) system saves DayClosing, locks the day, sets next opening cash, shares the summary.
+- **Alternates:** 5a difference above limit → note required. 6a unconfirmed scans exist for today → warning: confirm or discard them first.
+
+### UC-14 Add expense (Kharcha)
+- **Actor:** Owner / Salesman. Amount, head, paid from, note, optional photo → saved, reflected in today's net profit and expected cash.
+
+### UC-03 Void a confirmed document · UC-04 Return · UC-05 Stock adjustment · UC-06 Manage products · UC-07 Export Excel · UC-08 Configure AI key · UC-09 Manage users · UC-10 Record party payment · UC-11 View dashboard/alerts · UC-12 Import opening stock
+(Diagrammed in `uml/01-use-case.mmd`; flows follow the same pattern.)
+
+---
+
+## 8. Acceptance criteria (pilot)
+1. 50+ real bills from 2–3 pilot shops (English, Roman Urdu and at least 10 Urdu-script bills; ≥ 5 bills with 80–100 lines) scanned; measured accuracy meets NFR-ACC-01 and no row is silently dropped (FR-AI-13 catches every gap).
+2. Stock after 2 weeks of pilot equals a physical count for 20 sampled products (±0).
+3. Excel export totals equal dashboard totals for the same period.
+4. No stock movement exists without a confirmed document (DB check).
+5. Salesman completes a sale scan within NFR-USE-01.
+
+## 9. Changes recommended to the proposal (from research)
+| Proposal says | Reality (see Part C) | Change |
+|---|---|---|
+| "No manual typing" | Even ~95 % accuracy = ~5 wrong lines per 100 | Market as "photo + quick review" |
+| "~100 items in one scan" | Vision models silently drop rows on long lists | Strip/multi-page capture + row-count and totals checks |
+| "Connect your OpenAI or Gemini key" | Shopkeepers will not create API keys | QSSols-hosted key with scan quota; BYO optional |
+| Works for any handwriting | Handwritten Urdu (Nastaliq) has no proven benchmark | Pilot on real Urdu bills before promising it |
+| Receipt for "accounts and tax" | Not an FBR invoice; Tier-1 retailers need FBR POS | Footer disclaimer; FBR integration later |
+| 9 modules | Missing returns, udhaar, payments, opening stock, adjustments, roles, audit, backup | Added as [ADDED] requirements above |
+
+## 10. Traceability (requirement → UML)
+| Requirements | UML |
+|---|---|
+| FR-SCAN, FR-AI, FR-REV | 01 use case, 03/04 sequence, 05 activity, 06 state (Scan) |
+| FR-STK, BR-1..6 | 02 class, 07 state (Document), 11 ERD |
+| FR-RCP, FR-RPT | 01 use case, 04 sequence (sale) |
+| FR-CLS, FR-EXP, BR-8..10 | 01 use case (UC-13/14), 02 class, 11 ERD, 13 state (Day) |
+| NFR-MNT-01, C-1 | 09 component (AI adapter) |
+| NFR-SEC, NFR-REL | 10 deployment |
+| FR-AUTH-02, permission matrix (§3.11) | 01 use case (actor links) |
+
+## 11. Revision history and open points
+
+Changes in v1.1 (14 Nov 2026):
+| # | Change | Where |
+|---|---|---|
+| 1 | UI language aligned with prototype v0.2: Urdu (Nastaliq) + English are Must; Roman Urdu moved to Should | C-6, NFR-USE-02/03, §2.3 |
+| 2 | Permission matrix extended to returns, manual stock, parties, payments, expenses, day closing, dashboard and audit log | §3.11 |
+| 3 | Settings added for "salesman may close the day", salesman expense limit and short/excess note limit | FR-SET-03 |
+| 4 | Galla screen must show every line of the expected-cash formula | FR-CLS-03 |
+| 5 | Scope, product functions, key screens and entity list now include returns, daily closing and expenses | §1.2, §2.2, §5.1, §6 |
+| 6 | Use case diagram: Storekeeper linked to returns, Salesman to party payment | Part B, diagram 01 |
+| 7 | Diagram count corrected to 13; requirement IDs put back in number order | Header, §3.4, §3.7 |
+
+Open points (not resolved by this revision):
+1. **Owner confirmation** is needed for change 1 (it raises Urdu UI from v1.1 to v1 launch) and for the * rows of the permission matrix.
+2. **Gap analysis against the existing build** (A-4) has not been done; it needs access to the built system.
+3. Prototype v0.2 has a placeholder Ledger screen; parties, payments and returns (FR-PTY, FR-STK-06) have no screen design yet.
+</script>
+<script id="res-md" type="text/plain"># Shop Inventory ERP – Photo Scan: Research Findings
+
+Date: 2026-11-10. Prices are taken from vendor pages on this date and change often. "Vendor claim" means self-reported, not independently verified.
+
+## 1. Competitors
+
+| Product | Photo/bill scan to stock? | Price | Notes |
+|---|---|---|---|
+| **myBillBook** (India) | **Yes.** "Mira AI" scans a supplier bill and creates the purchase entry. It tags items as New or Matched, gives an editable preview and updates stock ([help](https://mybillbook.featurebase.app/en/help/articles/2564722-how-to-auto-enter-purchase-bills-and-update-stock-from)). It remembers the user's item-name corrections ([changelog Mar 2026](https://knowledge.mybillbook.in/changelog/product-updates-mar-19-2026)). | From about INR 399/yr; figures conflict ([xpay](https://www.xpay.sh/saas-pricing/mybillbook/)) | This is the closest copy of Flow A. Handwriting is not stated. |
+| **Vyapar** (India) | **Yes**, on Premium. Upload a bill PDF or image, AI fills the purchase entry and stock updates. Vendor claims "99.9%" accuracy. **"Works best with English"** ([Vyapar OCR](https://vyaparapp.in/ocr-scanner-software)) | Mobile free; desktop about INR 3,399/yr ([Capterra](https://www.capterra.com/p/180579/Vyapar/pricing/)) | No PKR pricing found. |
+| **TallyPrime – Docs by Ira** | Invoice-to-voucher. Marketing says it reads handwritten bills, but the official FAQ says handwritten documents are **not** supported and it is English only ([FAQ](https://help.tallysolutions.com/docs-by-ira-faq/)) | Bundled | Phased rollout. |
+| **BUSY AI Voucher Scan** | Reads items, qty, rates, taxes ([BUSY](https://busy.in/accounting-software/ai-voucher-scan.md)) | – | India. |
+| **Zoho Inventory** | Autoscan of uploaded documents, with free scans and then paid scan packs ([Zoho docs](https://www.zoho.com/inventory/help/documents/documents.html)) | Paid scan packs | Accuracy is lower on handwritten bills ([3rd party](https://aaxonix.com/resources/glossary/auto-scan-ocr-zoho-books/)). |
+| **Odoo** | Bill digitization through IAP credits, 1 credit per document ([docs](https://www.odoo.com/documentation/17.0/applications/finance/accounting/vendor_bills/invoice_digitization.html)) | About $0.10/scan (forum, unverified) ([forum](https://www.odoo.com/fr_FR/forum/aide-1/how-does-the-ai-powered-invoice-automation-work-bill-and-expense-digitization-209534)) | Heavy for small shops. |
+| **Udhaar Book** (PK, YC-backed) | No scanning. Has a stock book with low-stock alerts ([Udhaar](https://udhaar.pk/2025/06/04)) | Free; Premium is for SMS ([Udhaar](https://udhaar.pk/author/haseeb/page/17)) | Strong on udhaar (credit). |
+| **Easy Khata** (Bazaar, PK) | Ledger only ([MENAbytes](https://www.menabytes.com/bazaar-easy-khata/)) | – | Bazaar laid off about 600 staff in 2024 ([Profit](https://profit.pakistantoday.com.pk/2024/02/12/b2b-startups-shut-shop-or-iscale-down-bazaar-too-struggles-to-tide-over-current-crisis)) |
+| **Khatabook / OkCredit** | No scanning found. Used in PK ([review, biased](https://storebookledgerapp.pages.dev/blog/best-free-khata-apps-pakistan-2026.html)) | Freemium | Ledger-first. |
+| **Retailo** | Moved to SaaS in 2024 ([Profit](https://profit.pakistantoday.com.pk/2024/10/14/can-retailos-saas-gamble-pay-off)) | – | – |
+| **HysabOne** (PK POS) | Barcode, no scanning ([HysabOne](https://hysabone.com/pos-software-pakistan/)) | – | – |
+
+**Gap:** Indian tools already scan bills to stock. All of them target **printed GST invoices in English**. I found no Pakistani product that scans **handwritten letterpad bills** with Roman Urdu or Urdu text into stock (closest found is a hackathon project, [Sabzi Sahulat](https://ai.google.dev/competition/projects/sabzi-sahulat)). The Flow B sales-bill scan, which takes stock OUT, is not offered by any tool reviewed. The gap is real but narrow. myBillBook or Vyapar could add Urdu support and enter Pakistan.
+
+## 2. Accuracy on handwriting
+
+- **English cursive, small sample of 100:** GPT-5, Gemini 3 Pro Preview and olmOCR-2 each scored about 90% semantic similarity ([AIMultiple](https://research.aimultiple.com/handwriting-recognition)). A separate test reports handwriting accuracy of GPT-5 95%, olmOCR-2 94% and Gemini 2.5 Pro 93% ([AIMultiple OCR accuracy](https://aimultiple.com/ocr-accuracy)). Even 95% means **about 5 errors per 100 lines**.
+- **Urdu:** No benchmark of handwritten Urdu with LLMs was found. On printed Urdu newspapers, Gemini-2.5-Pro was best with a word error rate of 13.3% ([LREC 2026](https://aclanthology.org/2026.lrec-1.235/)). Zero-shot GPT-4o "struggles" with complex scripts such as Urdu ([arXiv 2412.16119](https://arxiv.org/html/2412.16119v1)). On Pashto, Gemini led ([PsOCR](https://www.arxiv.org/pdf/2505.10055)). Handwritten Nastaliq should be treated as **unproven**. Roman Urdu is Latin script and likely behaves like English handwriting, but abbreviations still need a dictionary.
+- **Dedicated OCR:** AWS Textract supports handwriting and invoice/receipt processing in **English only** ([FAQ](https://aws.amazon.com/textract/faqs/)). Azure lists Urdu for OCR, but its handwriting language list is limited, so this must be verified ([Azure](https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/language-support)). Google's Expense parser costs $0.10 per 10 pages ([pricing](https://cloud.google.com/document-ai/pricing)).
+- **Long lists, the key failure mode:** Vision models silently drop rows. One documented case returned 38 rows from a 40-row page, and nothing in the output showed the gap ([LlamaIndex](https://www.llamaindex.ai/blog/llm-ocr)). Missing or inserted (hallucinated) rows are a known error class ([arXiv 2406.08100](https://arxiv.org/pdf/2406.08100)). On long table-heavy documents, frontier models completed only about half and had a row recall of 74–79% ([micro1, vendor](https://micro1.ai/benchmark/long-extraction)). JSON can be valid while rows are missing or columns have shifted ([RunPulse](https://www.runpulse.com/blog/why-llms-cannot-own-enterprise-document-parsing)). Claude's documentation warns of hallucination on low-quality or rotated images and of imprecise counting ([Claude vision](https://platform.claude.com/docs/en/build-with-claude/vision)).
+
+## 3. Cost per scan and architecture
+
+The estimate assumes 1 photo of about 1–4k input tokens and about 6k output tokens (100 rows × about 50 tokens of JSON, no long reasoning). Gemini charges 258 tokens per 768px tile ([Gemini](https://aistudio.google.com/docs/image-understanding)). Claude charges about 1,300–4,800 tokens per image ([Claude vision](https://platform.claude.com/docs/en/build-with-claude/vision)).
+
+| Model (USD per 1M tokens, input/output) | Approx. per bill |
+|---|---|
+| Gemini 3.1 Flash-Lite $0.25/$1.50 ([pricing](https://aistudio.google.com/docs/pricing)) | about $0.01 |
+| Gemini 3.6 Flash $0.75/$3.75, **doubles 1 Jan 2027** ([pricing](https://aistudio.google.com/docs/pricing)) | about $0.025, then about $0.05 |
+| gpt-5.4-mini $0.75/$4.50; gpt-5-mini $0.25/$2 ([OpenAI](https://developers.openai.com/api/docs/pricing)) | about $0.013–0.03 |
+| Claude Sonnet 5.5 $2/$10; Haiku 5.5 $0.10/$0.50 ([Anthropic](https://platform.claude.com/docs/en/about-claude/pricing)) | about $0.07 / about $0.004 |
+
+Cost works out to roughly **$0.01–0.07 per bill, or about PKR 3–20** at an assumed rate of 280 PKR/USD. A second verification pass doubles this. Cost is not the risk. Accuracy is.
+
+**Recommended pipeline:**
+1. On the device: deskew, crop, contrast, resize to the model's sweet spot (for example about 1.5 MP). Block blurry photos.
+2. Split long pages into overlapping horizontal strips of about 20–25 rows. Number the rows and ask for `row_no` so gaps can be detected.
+3. Use strict JSON schema output ([OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)) with these fields: `raw_text`, `name`, `qty`, `unit`, `rate`, `amount`, `confidence`, `bbox`.
+4. Run deterministic checks: qty×rate=amount per row, sum of rows = written total, row count = serial numbers. Highlight any mismatch.
+5. Show crop-beside-row review, with low-confidence rows first. If totals fail, run a second pass with a different model.
+
+## 4. Product-name matching
+
+Real descriptions differ at word level for the same item. An example is "739mL" vs "0.739L" ([arXiv 2001.00288](https://ar5iv.labs.arxiv.org/html/2001.00288)). The usual design combines four parts ([preprint](https://www.preprints.org/manuscript/202605.0214), [SAP demo](https://heisenberglupenix-sap-invoice-to-po-linematching.static.hf.space/index.html)):
+- **lexical matching** (BM25 or fuzzy) for sizes and codes, plus **embeddings** for semantic recall
+- **LLM-generated aliases** per product
+- **rules** for size, unit and price sanity
+- **confidence bands**: ≥90% auto-suggest, 60–89% review, &lt;60% manual
+
+myBillBook's "remember corrections" is the proven UX pattern ([myBillBook](https://knowledge.mybillbook.in/en/articles/6335689)). Normalise sizes first, for example 1", 1 inch, 1in → `size=1in`. Keep a per-supplier alias table. Store a base unit with conversions (box=10 pcs, dozen=12, coil=90 m). Never auto-create a product without confirmation, or duplicates will multiply.
+
+## 5. Pakistan-specific
+
+- **FBR:** POS integration is mandatory for **Tier-1 retailers**. Tier-1 includes chains, shops in air-conditioned malls, shops with electricity bills over Rs 1.2M/yr and wholesaler-cum-retailers ([VATupdate](https://www.vatupdate.com/2025/08/12/fbr-identifies-tier-1-retailers-for-enhanced-tax-compliance-in-2026)). Outlets can be sealed if disconnected for more than 48 hours ([Customs Today](https://customstoday.media/fbr-tightens-pos-rules-to-seal-tier-1-retailer-outlets/)). About 80% of registered branches were "disconnected" in February 2026 ([Profit](https://profit.pakistantoday.com.pk/2026/02/21/80-of-tier-1-retail-branches-disconnected-from-fbr-pos-system-compliance-falls-below-10-report)). Most target shops are **not Tier-1**. A large showroom or wholesaler-cum-retailer may be, and this app's receipt is **not** an FBR-verified invoice. The app must say so.
+- **Privacy:** There is no enacted comprehensive data-protection law. The PDP Bill is still a draft or contested ([Chambers 2026](https://practiceguides.chambers.com/practice-guides/data-protection-privacy-2026/pakistan), [Arab News](https://www.arabnews.pk/node/2344396/pakistan)). Bill photos include supplier and customer names and phone numbers, and they go to US AI providers. Get consent and add a retention setting.
+- **Android:** Android has about 91% of mobile OS share in Pakistan ([StatCounter](https://gs.statcounter.com/os-market-share/mobile-tablet/pakistan)). The app needs to be Android-first or a PWA.
+- **Connectivity:** Pakistan had 68 internet outages in 2025 ([ProPakistani](https://propakistani.pk/2026/01/05/2025-was-the-worst-year-of-internet-outages-in-pakistan/)). Service degrades in the evenings ([Aaj](https://english.aaj.tv/news/amp/330456984)). The app should queue scans offline and keep the stock ledger usable offline.
+- **WhatsApp:** Pakistan has about 98M WhatsApp accounts ([TechJuice](https://www.techjuice.pk/?p=239607)) and 117M internet users ([DataReportal](https://datareportal.com/reports/digital-2026-pakistan)). Receipts should be shared as PDF or image through the share sheet or a wa.me link.
+- **Language:** Competitors' users type in Roman Urdu ([AI Khata Book](https://storebookledgerapp.pages.dev/pages/online-khata-book-pakistan.html)). Offer an Urdu/Roman Urdu UI toggle and voice-friendly labels.
+
+## 6. Verdict
+
+**The concept is sound** as a narrow wedge. Its edge is handwritten letterpad bills with Roman Urdu and Urdu text, a human review screen, and a photo kept as proof. The per-scan API cost is trivial.
+
+**Strengths:** It fills a real PK gap. The proven pattern (myBillBook/Vyapar) shows demand. It has an audit trail through the photo, and the BYO-key and demo mode make piloting cheap.
+
+**Risks:**
+1. Handwritten Urdu accuracy is unbenchmarked.
+2. Row skipping on long bills happens silently.
+3. Fuzzy matching creates duplicate products.
+4. Indian incumbents could add Urdu.
+5. Asking shopkeepers for an OpenAI or Gemini API key is a big adoption barrier. Use a hosted key with a per-scan quota.
+6. Gemini price doubles in January 2027 and models get deprecated ([pricing](https://aistudio.google.com/docs/pricing)).
+7. Privacy: customer data goes to foreign AI providers.
+8. Users may see the receipt as an FBR invoice.
+
+**Overstated claims:**
+- **"No manual typing"** should become "**review-and-correct**". Expect about 5–10% of lines to need edits on clear handwriting, and more on Urdu.
+- **"~100 items in one scan"** should become "multi-page or strip capture, with row-count and totals verification". Silent drops are documented.
+- Any accuracy % shown must be measured on real PK bills, not a vendor's 99.9%.
+
+**Missing must-haves:**
+- returns (sales and purchase)
+- udhaar (credit) and customer/supplier balances
+- payments (cash, JazzCash/Easypaisa, bank) and partial payments
+- opening stock import from Excel
+- stock adjustment, damage and stock count
+- multi-user roles (owner, salesman)
+- audit log of edits
+- unit conversions and multiple price levels (retail, wholesale)
+- duplicate-bill detection by image hash plus supplier/date
+- offline queue
+- automatic cloud backup and restore
+- Urdu UI
+- data export and delete
+- a pilot accuracy test set of 50+ real bills before launch
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script>
+const un=(id)=>{const t=document.createElement('textarea');t.innerHTML=document.getElementById(id).textContent;return t.value};
+const wrap=(h)=>h.replace(/<table>/g,'<div class="tw"><table>').replace(/<\/table>/g,'</table></div>');
+document.getElementById('srs-body').innerHTML='<h1>Part A – SRS</h1>'+wrap(marked.parse(un('srs-md').replace(/^# .*\n/,'')));
+document.getElementById('res-body').innerHTML=wrap(marked.parse(un('res-md').replace(/^# .*\n/,'')));
+</script>
+<!--claude-mermaid-runtime-begin:3477-->
+<style>.mermaid-diagram{margin-block:4px}.mermaid-diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}</style>
+<script src="/_runtime/mermaid-11.16.1.min.js"></script>
+<script>(function(){
+var CFG={"palettes":{"light":{"surface":"#f4efe4","text":"#42392e","line":"#8a7f6d","border":"#7a6c52","bg":"#fffdf8"},"dark":{"surface":"#262b34","text":"#f2f3f5","line":"#a8adb8","border":"#9aa4b8","bg":"#1f232b"}}};
+if(typeof mermaid==='undefined')return;
+var pres=Array.prototype.slice.call(document.querySelectorAll('pre.mermaid')).filter(function(p){if(p.hasAttribute('data-claude-mermaid-claimed'))return false;p.setAttribute('data-claude-mermaid-claimed','1');return true;});
+if(!pres.length)return;
+var mq=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+var root=document.documentElement;
+var items=pres.map(function(pre){
+var mount=document.createElement('div');mount.className='mermaid-diagram';
+return {pre:pre,mount:mount,src:pre.textContent||''};
+});
+var seq=0;
+var renderGen=0;
+var lastKey='';
+function pageBg(fallback){
+var els=[document.body,document.documentElement];
+for(var i=0;i<els.length;i++){
+var c=els[i]&&getComputedStyle(els[i]).backgroundColor;
+if(c&&c!=='transparent'&&c!=='rgba(0, 0, 0, 0)')return c;
+}
+return fallback;
+}
+function render(){
+var theme=root.getAttribute('data-theme');
+var dark=theme==='dark'||(!!(mq&&mq.matches)&&theme!=='light');
+var pal=dark?CFG.palettes.dark:CFG.palettes.light;
+var bg=pageBg(pal.bg);
+var key=(dark?'d':'l')+'|'+bg;
+if(key===lastKey)return;
+lastKey=key;
+var gen=++renderGen;
+var font=getComputedStyle(document.body).fontFamily||'sans-serif';
+var nat={useMaxWidth:false};
+mermaid.initialize({
+startOnLoad:false,securityLevel:'strict',theme:'base',
+flowchart:nat,sequence:nat,er:nat,state:nat,class:nat,pie:nat,
+gantt:nat,journey:nat,timeline:nat,gitGraph:nat,mindmap:nat,xyChart:nat,
+quadrantChart:nat,sankey:nat,c4:nat,requirement:nat,block:nat,
+packet:nat,kanban:nat,architecture:nat,radar:nat,
+themeVariables:{background:bg,mainBkg:pal.surface,primaryColor:pal.surface,
+primaryTextColor:pal.text,lineColor:pal.line,primaryBorderColor:pal.border,
+nodeBorder:pal.border,clusterBorder:pal.border,edgeLabelBackground:bg,
+clusterBkg:'rgba(127,127,127,0.07)',titleColor:pal.text,
+darkMode:dark,rowOdd:bg,rowEven:'rgba(127,127,127,0.07)',
+attributeBackgroundColorOdd:bg,attributeBackgroundColorEven:'rgba(127,127,127,0.07)',
+fontSize:'16px',fontFamily:font},
+themeCSS:'.node rect, .node circle, .node polygon, .node path, .cluster rect { stroke-width: 2px; }'
+});
+items.forEach(function(it){
+var id='claude-mermaid-'+seq++;
+mermaid.render(id,it.src).then(function(r){
+if(gen!==renderGen)return;
+var prev=it.pre.previousElementSibling;
+if(prev&&prev.className==='mermaid-diagram'&&prev!==it.mount)return;
+it.mount.innerHTML=r.svg;
+if(!it.mount.parentNode)it.pre.parentNode.insertBefore(it.mount,it.pre);
+it.pre.style.display='none';
+},function(){
+var scratch=document.getElementById(id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+scratch=document.getElementById('d'+id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+if(gen!==renderGen)return;
+if(it.mount.parentNode)it.mount.parentNode.removeChild(it.mount);
+it.pre.style.display='';
+});
+});
+}
+render();
+if(mq&&mq.addEventListener)mq.addEventListener('change',render);
+if(typeof MutationObserver!=='undefined')new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['data-theme']});
+})();</script>
+<!--claude-mermaid-runtime-end-->
+
+</body></html>

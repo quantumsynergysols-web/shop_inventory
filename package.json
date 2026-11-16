@@ -1,0 +1,23 @@
+{
+  "name": "shop-inventory-erp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Shop Inventory ERP – Photo Scan (QSSols). Built to SRS v1.1.",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "npm run test --workspace @erp/domain",
+    "typecheck": "tsc -p packages/domain/tsconfig.json",
+    "db:validate": "npm run db:validate --workspace @erp/api"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.3"
+  }
+}

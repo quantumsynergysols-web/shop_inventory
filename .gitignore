@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+# holds the generated dev database password
+apps/api/prisma/setup-dev-db.sql
+*.log
+.DS_Store

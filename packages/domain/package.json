@@ -1,0 +1,14 @@
+{
+  "name": "@erp/domain",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pure business rules: money, units, costing, stock posting, matching, AI-result checks, day closing, permissions. No I/O.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.ts\"",
+    "test:coverage": "node --test --experimental-test-coverage \"test/*.test.ts\""
+  }
+}
