@@ -22,6 +22,10 @@ import { hash } from '@node-rs/argon2';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const api = join(root, 'apps/api');
 const outDir = join(root, 'docs/demo');
+// Urdu narration, one clip per step (FameSpeak voice "Asad", ur-PK): docs/demo/voice/step-NN.mp3
+const voiceDir = join(outDir, 'voice');
+const clip = (n) => join(voiceDir, `step-${String(n).padStart(2, '0')}.mp3`);
+const clipSeconds = (n) => (existsSync(clip(n)) ? Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', clip(n)]).toString().trim()) : 0);
 const PORT = 3100;
 const BASE = `http://localhost:${PORT}`;
 // Demo-only login for the throwaway demo database (shown masked in the video).
@@ -177,9 +181,23 @@ async function record() {
   await page.waitForTimeout(800);
   const frame = page.frameLocator('#phone');
   let n = 0;
+  let talkingUntil = 0;
+  const cues = [];
 
-  const say = async (title, en, req = '', ms = 2600) => {
+  /**
+   * Shows a caption and starts its narration clip. The screen waits for the narration to finish,
+   * unless `overlap` is set: then the following actions play while the narrator describes them.
+   */
+  const say = async (title, en, req = '', ms = 2600, { overlap = false } = {}) => {
     n++;
+    const wait = talkingUntil - Date.now();
+    if (wait > 0) await page.waitForTimeout(wait);
+    const dur = clipSeconds(n);
+    if (dur) {
+      cues.push({ file: clip(n), at: Date.now() / 1000 });
+      talkingUntil = Date.now() + (dur + 0.35) * 1000;
+      if (!overlap) ms = Math.max(ms, (dur + 0.5) * 1000);
+    }
     await page.evaluate(([s, t, e, r]) => {
       document.getElementById('step').textContent = s;
       document.getElementById('title').textContent = t;
@@ -234,18 +252,18 @@ async function record() {
   await scroll(-500, 800);
 
   // 3. Purchase scan
-  await say('Supplier ka bill: photo lein', 'Purchase (Stock IN): take a photo of the supplier’s handwritten letterpad.', 'FR-SCAN-01..04', 1800);
+  await say('Supplier ka bill: photo lein', 'Purchase (Stock IN): take a photo of the supplier’s handwritten letterpad.', 'FR-SCAN-01..04', 1800, { overlap: true });
   await tap(frame.locator('a.bigbtn.in'), 900);
   await frame.locator('input[type=file]').setInputFiles(join(api, 'demo-fixtures/purchase-bill.png'));
   await page.waitForTimeout(1500);
   await tap(frame.getByRole('button', { name: 'بل پڑھیں' }), 600);
-  await say('AI bill parhta hai', 'Each page is read; rows, quantities, rates and totals are checked.', 'FR-AI-01..06', 1400);
+  await say('AI bill parhta hai', 'Each page is read; rows, quantities, rates and totals are checked.', 'FR-AI-01..06', 1400, { overlap: true });
   await frame.getByText('بل چیک کریں').first().waitFor({ timeout: 20000 });
   await page.waitForTimeout(1200);
   await say('Ghalti pakri gayi: row 5 gum hai', 'Serial 5 is missing from the reading and the total does not match, so the app warns instead of trusting the AI.', 'FR-AI-12/13 · NFR-ACC-02', 3600);
   await say('Har line ke saath photo ka tukda', 'Each row shows its crop from the photo. Supplier was matched from the name on the bill.', 'FR-REV-01/06/14 · FR-PTY-04', 3000);
   await scroll(330, 2200);
-  await say('Gum row khud shamil karein', 'Add the missed row: type it, create the new product, set qty and rate.', 'FR-REV-02/10/15', 1500);
+  await say('Gum row khud shamil karein', 'Add the missed row: type it, create the new product, set qty and rate.', 'FR-REV-02/10/15', 1500, { overlap: true });
   await tap(frame.getByRole('button', { name: 'لائن شامل کریں' }), 900);
   await type(frame.getByLabel('کاغذ پر لکھا'), 'Dinner set 24pc');
   await type(frame.getByPlaceholder('پروڈکٹ تلاش کریں'), 'dinner set');
@@ -267,18 +285,18 @@ async function record() {
 
   // 4. Sale scan
   await tap(frame.getByRole('button', { name: 'ہوم پر جائیں' }), 1200);
-  await say('Ab sale ka bill', 'Sale (Stock OUT): photo of the shop’s handwritten sale bill.', 'UC-02', 1600);
+  await say('Ab sale ka bill', 'Sale (Stock OUT): photo of the shop’s handwritten sale bill.', 'UC-02', 1600, { overlap: true });
   await tap(frame.locator('a.bigbtn.out'), 900);
   await frame.locator('input[type=file]').setInputFiles(join(api, 'demo-fixtures/sale-bill.png'));
   await page.waitForTimeout(1300);
   await tap(frame.getByRole('button', { name: 'بل پڑھیں' }), 600);
   await frame.getByText('بل چیک کریں').first().waitFor({ timeout: 20000 });
   await page.waitForTimeout(1000);
-  await say('Stock kam hai: sale ruk gayi', 'The bill asks for 60 Tee joints but only 45 are in stock, so Confirm is blocked.', 'FR-REV-07', 3400);
+  await say('Stock kam hai: sale ruk gayi', 'The bill asks for 60 Tee joints but only 45 are in stock, so Confirm is blocked.', 'FR-REV-07', 3400, { overlap: true });
   await tap(frame.locator('.ln', { hasText: 'Tee Joint' }), 900);
   await type(frame.locator('.sheet').getByLabel('مقدار'), '45');
   await tap(frame.locator('.sheet').getByRole('button', { name: 'ٹھیک ہے' }), 1500);
-  await say('Customer photo se mila, udhaar bhi', 'Rana Builders pays Rs 30,000 now; the rest goes to his udhaar.', 'FR-REV-12 · BR-7', 1800);
+  await say('Customer photo se mila, udhaar bhi', 'Rana Builders pays Rs 30,000 now; the rest goes to his udhaar.', 'FR-REV-12 · BR-7', 1800, { overlap: true });
   await scroll(1400, 1000);
   await type(frame.getByLabel('وصول رقم'), '30000');
   await page.waitForTimeout(1200);
@@ -290,7 +308,7 @@ async function record() {
 
   // 5. Day closing
   await tap(frame.getByRole('button', { name: 'ہوم پر جائیں' }), 1200);
-  await say('Din band karna', 'Day-end closing: sales by cash, bank and udhaar, profit, expenses and the galla count.', 'SRS §3.10a · BR-8/9', 1600);
+  await say('Din band karna', 'Day-end closing: sales by cash, bank and udhaar, profit, expenses and the galla count.', 'SRS §3.10a · BR-8/9', 1600, { overlap: true });
   await tap(frame.locator('a[href="#/day"]'), 1600);
   await scroll(350, 1800);
   await tap(frame.getByRole('button', { name: '+ خرچ درج کریں' }), 800);
@@ -302,7 +320,7 @@ async function record() {
     const row = [...document.querySelectorAll('.rw.tot')].find((r) => r.textContent.includes('متوقع کیش'));
     return Number(row.querySelector('.n').textContent.replace(/[^0-9.]/g, ''));
   });
-  await say('Galla gin kar likhein', `Expected cash is Rs ${expected.toLocaleString('en-US')}. The owner counts Rs 200 less.`, 'FR-CLS-03/04/06', 1600);
+  await say('Galla gin kar likhein', `Expected cash is Rs ${expected.toLocaleString('en-US')}. The owner counts Rs 200 less.`, 'FR-CLS-03/04/06', 1600, { overlap: true });
   await type(frame.locator('#counted'), String(expected - 200));
   await page.waitForTimeout(1500);
   await tap(frame.getByRole('button', { name: 'دن بند کریں' }), 1800);
@@ -332,19 +350,28 @@ async function record() {
   list.push(`file '${fwd(frames[frames.length - 1].file)}'`);
   const listFile = join(framesDir, 'list.txt');
   writeFileSync(listFile, list.join('\n') + '\n');
-  console.log(`${frames.length} frames, ${(end - frames[0].t).toFixed(0)} s`);
-  return listFile;
+  console.log(`${frames.length} frames, ${(end - frames[0].t).toFixed(0)} s, ${cues.length} narration clips`);
+  return { listFile, cues, start: frames[0].t };
 }
 
 await prepareDatabase();
 const server = await startServer();
-let listFile;
+let rec;
 try {
   await seedThroughApi();
-  listFile = await record();
+  rec = await record();
 } finally {
   server.kill();
 }
 const mp4 = join(outDir, 'shop-erp-demo.mp4');
-execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', listFile, '-vf', 'fps=25,format=yuv420p', '-c:v', 'libx264', '-crf', '21', '-preset', 'medium', '-movflags', '+faststart', mp4]);
+const args = ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', rec.listFile];
+for (const c of rec.cues) args.push('-i', c.file);
+if (rec.cues.length) {
+  // Each clip starts at the moment its caption appeared.
+  const delays = rec.cues.map((c, i) => { const ms = Math.max(0, Math.round((c.at - rec.start) * 1000)); return `[${i + 1}:a]adelay=${ms}|${ms}[a${i}]`; });
+  const filter = `${delays.join(';')};${rec.cues.map((_, i) => `[a${i}]`).join('')}amix=inputs=${rec.cues.length}:normalize=0:duration=longest[aout]`;
+  args.push('-filter_complex', filter, '-map', '0:v', '-map', '[aout]', '-c:a', 'aac', '-b:a', '128k');
+}
+args.push('-vf', 'fps=25,format=yuv420p', '-c:v', 'libx264', '-crf', '21', '-preset', 'medium', '-movflags', '+faststart', mp4);
+execFileSync('ffmpeg', args);
 console.log(existsSync(mp4) ? `video: ${mp4}` : 'MP4 not created');

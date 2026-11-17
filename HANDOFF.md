@@ -39,7 +39,7 @@ Last updated: 17 Nov 2026 (end of phase 5). Read this first in the next session.
 | 3 | (7143e75) Dashboard, day closing + expenses (use `summarizeDay`; exclude voided sales and their voids), reports CSV/XLSX, users module (FR-AUTH-04); shop isolation tested through the API | done (row-level security moved to hardening) |
 | 4 | (eda8e4b) Web app: React PWA, Urdu/English, prototype v0.2 design, all screens | done |
 | H | Hardening: row-level security (NFR-SEC-02), pg-boss queue for scans, perceptual photo hash, expense receipt photo, returns/adjustments/opening-stock UI, AI settings screen (FR-SET-02) | – |
-| 5 | Video demo: `npm run demo:record` → `docs/demo/shop-erp-demo.mp4` (2:29, 1280×720, git-ignored) | done |
+| 5 | (cc9d7b1) Video demo: `npm run demo:record` → `docs/demo/shop-erp-demo.mp4` (3:39, 1280×720, Urdu narration, git-ignored) | done |
 | 6 | Real AI adapters (OpenAI/Gemini, FR-AI-14/15, NFR-ACC-01 pilot on 50+ real bills) once a key is available; then hardening (H) | next |
 
 Phase 4 (web app, `apps/web`):
@@ -52,6 +52,7 @@ Phase 4 (web app, `apps/web`):
 
 Phase 5 (demo video):
 - `scripts/record-demo.mjs` creates/clears database `shop_erp_demo`, seeds a sample shop (owner login 03001234567 / demo-owner-2026, demo database only), starts the API on :3100, and drives the installed Chrome (playwright-core, `channel: 'chrome'`) through 19 captioned steps in a phone frame. Frames come from Chrome's CDP screencast and the installed ffmpeg makes the MP4, so nothing extra is downloaded (Playwright's own video needs its ffmpeg download).
+- Narration: 20 Urdu clips in `docs/demo/voice/step-NN.mp3` (FameSpeak voice "Asad", ur-PK, free tier; texts in `docs/demo/voice/narration.md`). Each caption starts its clip; the screen waits for it, except steps marked `overlap` where the actions play during the narration. ffmpeg mixes the clips at their caption times (checked: speech starts within ~0.5 s of the caption change).
 - Story: login → home → purchase photo (demo reading misses row 5) → add the row with a new product → confirm → stock up → sale photo (Tee short: 60 vs 45) → fix → Rs 30,000 paid, rest udhaar → receipt → expense + galla count (Rs 200 short) → close day → ledger → stock → English.
 - Day closing shows COGS with paisa (e.g. Rs 38,898.68) because average cost is exact; consider rounding the display.
 
