@@ -1,5 +1,7 @@
 import { after, before, beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Controller, Get, type INestApplication } from '@nestjs/common';
 import { createApp } from '../app.js';
 import type { AppConfig } from '../config.js';
@@ -15,6 +17,9 @@ const config: AppConfig = {
   SESSION_IDLE_DAYS: 30,
   MAX_FAILED_LOGINS: 5,
   LOCKOUT_MINUTES: 15,
+  STORAGE_DIR: join(tmpdir(), 'erp-test-storage'),
+  AI_PROVIDER: 'demo',
+  DEMO_FIXTURES_DIR: join(tmpdir(), 'erp-test-no-fixtures'),
 };
 
 let app: INestApplication;

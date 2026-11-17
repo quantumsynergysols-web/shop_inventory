@@ -4,6 +4,8 @@
  */
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { createApp } from '../app.js';
@@ -51,6 +53,9 @@ describe('inventory against PostgreSQL', { skip: !url && 'TEST_DATABASE_URL not 
       SESSION_IDLE_DAYS: 30,
       MAX_FAILED_LOGINS: 5,
       LOCKOUT_MINUTES: 15,
+  STORAGE_DIR: join(tmpdir(), 'erp-test-storage'),
+  AI_PROVIDER: 'demo',
+  DEMO_FIXTURES_DIR: join(tmpdir(), 'erp-test-no-fixtures'),
     };
     app = await createApp(config, {}, { quiet: true });
     await app.listen(0);

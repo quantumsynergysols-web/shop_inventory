@@ -8,3 +8,6 @@ coverage/
 apps/api/prisma/setup-dev-db.sql
 *.log
 .DS_Store
+
+# uploaded bill photos and receipts in development
+apps/api/storage/

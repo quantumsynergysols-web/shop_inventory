@@ -14,6 +14,10 @@ import { PartiesController } from './parties/parties.controller.js';
 import { PartiesService } from './parties/parties.service.js';
 import { ProductsController } from './products/products.controller.js';
 import { ProductsService } from './products/products.service.js';
+import { AI_PROVIDER, DemoAiProvider } from './scans/ai-provider.js';
+import { ScansController } from './scans/scans.controller.js';
+import { ScansService } from './scans/scans.service.js';
+import { FILE_STORAGE, LocalDiskStorage } from './storage/storage.js';
 import { HealthController } from './health/health.controller.js';
 import { HEALTH_PROBE, type HealthProbe } from './health/health.probe.js';
 import { PrismaService } from './prisma/prisma.service.js';
@@ -40,13 +44,17 @@ export class AppModule {
       ProductsService,
       PartiesService,
       DocumentsService,
+      ScansService,
+      { provide: FILE_STORAGE, useClass: LocalDiskStorage },
+      DemoAiProvider,
+      { provide: AI_PROVIDER, useExisting: DemoAiProvider },
       { provide: APP_GUARD, useClass: AuthGuard },
       { provide: APP_FILTER, useClass: DomainErrorsFilter },
     ];
     return {
       module: AppModule,
       imports: [JwtModule.register({ secret: config.JWT_SECRET, signOptions: { algorithm: 'HS256' }, verifyOptions: { algorithms: ['HS256'] } })],
-      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController],
+      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, ScansController],
       providers,
     };
   }

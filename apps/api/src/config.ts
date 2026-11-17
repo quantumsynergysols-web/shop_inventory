@@ -11,6 +11,12 @@ const schema = z.object({
   /** NFR-SEC-04: lockout after 5 failed logins */
   MAX_FAILED_LOGINS: z.coerce.number().int().positive().default(5),
   LOCKOUT_MINUTES: z.coerce.number().int().positive().default(15),
+  /** Bill photos and receipts (local disk in development; S3/R2 later) */
+  STORAGE_DIR: z.string().default('storage'),
+  /** "demo" until a real provider and key are configured (FR-AI-08, FR-AI-15) */
+  AI_PROVIDER: z.enum(['demo']).default('demo'),
+  /** Recorded AI results for known sample bills, used by the demo provider */
+  DEMO_FIXTURES_DIR: z.string().default('demo-fixtures'),
 });
 
 export type AppConfig = z.infer<typeof schema>;

@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Header, Headers, NotFoundException, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { z } from 'zod';
 import { CurrentUser, Requires, type AuthUser } from '../auth/decorators.js';
 import { ZodPipe } from '../common/zod.pipe.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 import { DocumentsService } from './documents.service.js';
+import { receiptHtml, receiptText } from './receipt.js';
 
 const money = z.number().int().min(0).max(1e13);
 const payMode = z.enum(['CASH', 'BANK', 'JAZZCASH', 'EASYPAISA']);
@@ -38,7 +40,35 @@ const listQuery = z.object({
 
 @Controller('documents')
 export class DocumentsController {
-  constructor(private readonly docs: DocumentsService) {}
+  constructor(
+    private readonly docs: DocumentsService,
+    private readonly db: PrismaService,
+  ) {}
+
+  private async shopAndDoc(u: AuthUser, id: string) {
+    const [shop, d] = await Promise.all([this.db.shop.findUniqueOrThrow({ where: { id: u.shopId } }), this.docs.get(u.shopId, id)]);
+    if (d.kind !== 'SALE') throw new NotFoundException('Only sales have receipts');
+    return { shop, d };
+  }
+
+  /** Printable receipt; reprint any time, voided ones show VOID (FR-RCP-02/05). */
+  @Requires('dashboard.view')
+  @Get(':id/receipt')
+  @Header('content-type', 'text/html; charset=utf-8')
+  async receipt(@CurrentUser() u: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Query('paper') paper?: string) {
+    const { shop, d } = await this.shopAndDoc(u, id);
+    return receiptHtml(shop, d, { paper: paper === '58' || paper === 'a4' ? paper : '80' });
+  }
+
+  /** FR-RCP-03: WhatsApp share text and wa.me link (to the customer's phone when known). */
+  @Requires('dashboard.view')
+  @Get(':id/share')
+  async share(@CurrentUser() u: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    const { shop, d } = await this.shopAndDoc(u, id);
+    const text = receiptText(shop, d);
+    const phone = d.party?.phone?.replace(/\D/g, '').replace(/^0/, '92') ?? '';
+    return { text, whatsappUrl: `https://wa.me/${phone}?text=${encodeURIComponent(text)}` };
+  }
 
   @Requires('dashboard.view')
   @Get()

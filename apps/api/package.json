@@ -29,6 +29,7 @@
   "devDependencies": {
     "@nestjs/testing": "11.2.8",
     "@types/express": "5.0.6",
+    "@types/multer": "2.3.0",
     "prisma": "6.1.0"
   }
 }

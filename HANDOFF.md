@@ -1,6 +1,6 @@
 # Handoff – Shop Inventory ERP
 
-Last updated: 17 Nov 2026 (end of phase 1). Read this first in the next session.
+Last updated: 17 Nov 2026 (end of phase 2). Read this first in the next session.
 
 ## Where things stand
 - Project folder: `C:\Quantum Synergy Solutions Projects\Shop_Inventory_ERP`, git `main`, remote https://github.com/quantumsynergysols-web/shop_inventory (push as star-anonymus; this repo's git email is the GitHub noreply address). Repo is public.
@@ -9,7 +9,8 @@ Last updated: 17 Nov 2026 (end of phase 1). Read this first in the next session.
 - `apps/api` (NestJS 11.2.8, ESM, compiled with tsc): config (zod), PrismaService, `GET /api/health`, auth (`POST /api/auth/login|refresh|logout`, `GET /api/auth/me`), global AuthGuard + `@Requires(action)` from the permission matrix, Argon2id passwords, 30-day sliding sessions, lockout after 5 wrong passwords, audit log on login/lock. 8 HTTP tests with an in-memory store (no DB needed). `src/seed.ts` creates the first shop + owner.
 - Database `shop_erp` on local PostgreSQL 18 (user `erp_dev`): migrations `init` and `search_trgm` (pg_trgm GIN indexes on product/alias/party names, also declared in the schema so `migrate dev` sees no drift). Seeded: "Demo Shop", 1 owner, 6 categories, 7 expense heads, Walk-in customer. Owner login phone/password are in `apps/api/.env` (`SEED_OWNER_*`). Login, me and refresh verified against the real database.
 - Phase 1 API (all shop-scoped, role-checked): `GET/POST/PATCH /api/products` (pg_trgm typo search, auto SKU, suggested sale price from markup, price history), `GET/POST /api/categories`, `GET/POST /api/parties` (+ balance from ledger, history), `POST /api/parties/:id/payments` (wasooli / supplier payment), `GET/POST /api/documents` (manual PURCHASE/SALE: row locks, `postDocument`, doc numbers, receipt numbers, payments, ledger, Idempotency-Key header, day lock), `POST /api/documents/:id/void` (owner; VOID document with reversed movements, ledger and payments). Domain errors map to HTTP in `common/domain-errors.filter.ts` (stock shortage = 409 with every short line).
-- Tests: `npm test` = 49 domain + 8 API (no DB). `npm run test:db --workspace @erp/api` = 10 integration tests on `shop_erp_test` (created automatically), incl. two sales racing for the last stock and double-tap idempotency. `npm run typecheck` clean.
+- Phase 2 API (scan flow): `POST /api/scans` (multipart `type` + 1–10 `pages`, 15 MB each; photos kept on disk under `apps/api/storage/`, git-ignored; exact-duplicate photos flagged), extraction runs in-process in the background (`ScansService.running`), every page read in parallel by the `AiProvider` (only `DemoAiProvider` exists: recorded readings for known sample photos from `apps/api/demo-fixtures/*.json` keyed by SHA-256, otherwise empty rows = manual mode FR-AI-08), then `checkExtraction` + trigram candidates + `matchProduct`. `GET /api/scans`, `GET /api/scans/:id` (lines in review order with flags, suggestions, short stock, price diff, suggested party, `blockingCount`), `GET /api/scans/:id/pages/:n` (photo), `PUT /api/scans/:id/lines` (autosave, keeps paper order), `POST /api/scans/:id/retry|manual|discard|confirm` (confirm posts through `DocumentsService.postInTx`, learns aliases per supplier, safe to repeat). `GET /api/documents/:id/receipt?paper=58|80|a4` (printable HTML, VOID watermark, FBR disclaimer) and `GET /api/documents/:id/share` (WhatsApp text + wa.me link).
+- Tests: `npm test` = 49 domain + 8 API (no DB). `npm run test:db --workspace @erp/api` = 19 integration tests (10 inventory + 9 scan flow) on `shop_erp_test` (created automatically), incl. two sales racing for the last stock and double-tap idempotency. `npm run typecheck` clean.
 
 ## Machine resources (checked 17 Nov 2026)
 | Need | Status | Plan |
@@ -32,13 +33,16 @@ Last updated: 17 Nov 2026 (end of phase 1). Read this first in the next session.
 ## Phases (agreed with the user 17 Nov 2026)
 | Phase | Scope | Status |
 |---|---|---|
-| 1 | Backend core: products, categories, parties, payments, manual purchase/sale posting, void, DB tests | done |
-| 2 | Scan flow: photo upload + local storage, AI adapter interface + demo adapter (FR-AI-08), `checkExtraction`, `matchProduct`, review/autosave, confirm via `DocumentsService.postInTx` with alias learning (FR-REV-05), receipts | next |
-| 3 | Dashboard, day closing + expenses (use `summarizeDay`; exclude voided sales and their voids), reports CSV/XLSX, users module (FR-AUTH-04), row-level security (NFR-SEC-02) | – |
+| 1 | Backend core: products, categories, parties, payments, manual purchase/sale posting, void, DB tests | done (b984639) |
+| 2 | Scan flow: photo upload + local storage, AI adapter interface + demo adapter (FR-AI-08), `checkExtraction`, `matchProduct`, review/autosave, confirm via `DocumentsService.postInTx` with alias learning (FR-REV-05), receipts | done |
+| 3 | Dashboard, day closing + expenses (use `summarizeDay`; exclude voided sales and their voids), reports CSV/XLSX, users module (FR-AUTH-04), row-level security (NFR-SEC-02) | next |
 | 4 | Web app: React PWA, Urdu/English, prototype v0.2 design, all screens | – |
 | 5 | Video demo (Playwright driving the installed Chrome, `channel: 'chrome'`, records webm), real AI adapters once a key is available | – |
 
 Notes for later phases:
+- Scan extraction is in-process; a restart while PROCESSING leaves the scan stuck. Phase 3/5: pg-boss queue, or on startup move PROCESSING scans to FAILED so the user can retry.
+- No real image checks yet (blur, size, de-skew FR-SCAN-04..06 are client-side, phase 4); the server trusts the declared image type.
+- The demo-fixtures folder is empty until phase 5 creates the sample bill photos.
 - Returns (FR-STK-06), stock adjustment (FR-STK-07), opening stock import (FR-STK-08) and unit conversions UI are not built yet; `postDocument` already supports SALES_RETURN, PURCHASE_RETURN, ADJUST_IN/OUT, OPENING.
 - Bill-level discount is not allocated to purchase cost yet (purchase unit cost = line amount ÷ qty).
 - Row-level security needs design first: `erp_dev` owns the tables, so policies need `FORCE ROW LEVEL SECURITY` and a per-transaction `set_config('app.shop_id', ...)`; login and seed run outside it.
