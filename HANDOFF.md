@@ -1,6 +1,6 @@
 # Handoff – Shop Inventory ERP
 
-Last updated: 17 Nov 2026. Read this first in the next session.
+Last updated: 17 Nov 2026 (end of phase 1). Read this first in the next session.
 
 ## Where things stand
 - Project folder: `C:\Quantum Synergy Solutions Projects\Shop_Inventory_ERP`, git `main`, remote https://github.com/quantumsynergysols-web/shop_inventory (push as star-anonymus; this repo's git email is the GitHub noreply address). Repo is public.
@@ -8,7 +8,8 @@ Last updated: 17 Nov 2026. Read this first in the next session.
 - `packages/domain`: costing, posting/void/returns, units, matching, AI-result checks, day closing, permissions. 49 tests. Built to `dist/` with `npm run build --workspace @erp/domain` (the API imports the built files).
 - `apps/api` (NestJS 11.2.8, ESM, compiled with tsc): config (zod), PrismaService, `GET /api/health`, auth (`POST /api/auth/login|refresh|logout`, `GET /api/auth/me`), global AuthGuard + `@Requires(action)` from the permission matrix, Argon2id passwords, 30-day sliding sessions, lockout after 5 wrong passwords, audit log on login/lock. 8 HTTP tests with an in-memory store (no DB needed). `src/seed.ts` creates the first shop + owner.
 - Database `shop_erp` on local PostgreSQL 18 (user `erp_dev`): migrations `init` and `search_trgm` (pg_trgm GIN indexes on product/alias/party names, also declared in the schema so `migrate dev` sees no drift). Seeded: "Demo Shop", 1 owner, 6 categories, 7 expense heads, Walk-in customer. Owner login phone/password are in `apps/api/.env` (`SEED_OWNER_*`). Login, me and refresh verified against the real database.
-- `npm test` = 57 tests pass; `npm run typecheck` clean.
+- Phase 1 API (all shop-scoped, role-checked): `GET/POST/PATCH /api/products` (pg_trgm typo search, auto SKU, suggested sale price from markup, price history), `GET/POST /api/categories`, `GET/POST /api/parties` (+ balance from ledger, history), `POST /api/parties/:id/payments` (wasooli / supplier payment), `GET/POST /api/documents` (manual PURCHASE/SALE: row locks, `postDocument`, doc numbers, receipt numbers, payments, ledger, Idempotency-Key header, day lock), `POST /api/documents/:id/void` (owner; VOID document with reversed movements, ledger and payments). Domain errors map to HTTP in `common/domain-errors.filter.ts` (stock shortage = 409 with every short line).
+- Tests: `npm test` = 49 domain + 8 API (no DB). `npm run test:db --workspace @erp/api` = 10 integration tests on `shop_erp_test` (created automatically), incl. two sales racing for the last stock and double-tap idempotency. `npm run typecheck` clean.
 
 ## Machine resources (checked 17 Nov 2026)
 | Need | Status | Plan |
@@ -28,13 +29,19 @@ Last updated: 17 Nov 2026. Read this first in the next session.
 - In PowerShell, run executables with `&`: `& "C:\Program Files\PostgreSQL\18\bin\psql.exe" ...`.
 - `prisma migrate dev` waits for an answer when the database and schema differ, which hangs a non-interactive shell. Check first with `prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script` (run from `apps/api` with `node --env-file=.env ../../node_modules/prisma/build/index.js ...`).
 
-## Next steps, in order
-1. Row-level security per `shopId` (NFR-SEC-02). Needs design first: `erp_dev` owns the tables, so policies need `FORCE ROW LEVEL SECURITY` and a per-transaction `set_config('app.shop_id', ...)` from the API; login and seed must run outside it.
-2. Users module (FR-AUTH-04): owner adds/disables users, resets passwords.
-3. Products, categories, parties (FR-PRD, FR-PTY) with shop-scoped queries.
-4. Documents: manual Stock IN/OUT and confirm transaction using `postDocument` with idempotency key (FR-STK-01/09, NFR-REL-02), doc numbering via `DocCounter`, receipts.
-5. Scans: storage adapter, pg-boss queue, AI adapter interface + demo adapter, `checkExtraction`, `matchProduct`, review API.
-6. Day closing, expenses, reports, then the React PWA (`apps/web`).
+## Phases (agreed with the user 17 Nov 2026)
+| Phase | Scope | Status |
+|---|---|---|
+| 1 | Backend core: products, categories, parties, payments, manual purchase/sale posting, void, DB tests | done |
+| 2 | Scan flow: photo upload + local storage, AI adapter interface + demo adapter (FR-AI-08), `checkExtraction`, `matchProduct`, review/autosave, confirm via `DocumentsService.postInTx` with alias learning (FR-REV-05), receipts | next |
+| 3 | Dashboard, day closing + expenses (use `summarizeDay`; exclude voided sales and their voids), reports CSV/XLSX, users module (FR-AUTH-04), row-level security (NFR-SEC-02) | – |
+| 4 | Web app: React PWA, Urdu/English, prototype v0.2 design, all screens | – |
+| 5 | Video demo (Playwright driving the installed Chrome, `channel: 'chrome'`, records webm), real AI adapters once a key is available | – |
+
+Notes for later phases:
+- Returns (FR-STK-06), stock adjustment (FR-STK-07), opening stock import (FR-STK-08) and unit conversions UI are not built yet; `postDocument` already supports SALES_RETURN, PURCHASE_RETURN, ADJUST_IN/OUT, OPENING.
+- Bill-level discount is not allocated to purchase cost yet (purchase unit cost = line amount ÷ qty).
+- Row-level security needs design first: `erp_dev` owns the tables, so policies need `FORCE ROW LEVEL SECURITY` and a per-transaction `set_config('app.shop_id', ...)`; login and seed run outside it.
 
 ## Open decisions for the owner
 - UI language: SRS v1.1 makes Urdu (Nastaliq) + English a v1 Must (matches the prototype). Needs owner confirmation.

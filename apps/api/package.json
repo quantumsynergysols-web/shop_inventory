@@ -11,7 +11,8 @@
     "test": "tsc -p tsconfig.json && node --test --enable-source-maps \"dist/**/*.test.js\"",
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:migrate": "node --env-file-if-exists=.env ../../node_modules/prisma/build/index.js migrate dev --schema prisma/schema.prisma",
-    "db:seed": "node --env-file-if-exists=.env dist/seed.js"
+    "db:seed": "node --env-file-if-exists=.env dist/seed.js",
+    "test:db": "tsc -p tsconfig.json && node --env-file-if-exists=.env scripts/test-db.mjs"
   },
   "dependencies": {
     "@erp/domain": "*",

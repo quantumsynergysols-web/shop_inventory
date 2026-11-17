@@ -15,6 +15,7 @@ export type Action =
   | 'return.sales'
   | 'return.purchase'
   | 'product.view'
+  | 'product.create'
   | 'product.edit'
   | 'price.edit'
   | 'document.void'
@@ -45,6 +46,8 @@ const MATRIX: Record<Action, readonly Role[]> = {
   'return.sales': ['OWNER', 'SALESMAN'],
   'return.purchase': ['OWNER', 'STOREKEEPER'],
   'product.view': ALL,
+  // FR-REV-10/15: "create new product" from the review screen of a scan
+  'product.create': ['OWNER', 'SALESMAN', 'STOREKEEPER'],
   'product.edit': ['OWNER'],
   'price.edit': ['OWNER'],
   'document.void': ['OWNER'],

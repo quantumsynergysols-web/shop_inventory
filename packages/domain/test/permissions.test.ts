@@ -11,6 +11,9 @@ test('matrix basics', () => {
   assert.ok(can('ACCOUNTANT', 'report.export'));
   assert.ok(!can('SALESMAN', 'dashboard.view_financials'));
   assert.ok(can('OWNER', 'day.reopen'));
+  assert.ok(can('STOREKEEPER', 'product.create'));
+  assert.ok(!can('STOREKEEPER', 'price.edit'));
+  assert.ok(!can('ACCOUNTANT', 'product.create'));
 });
 
 test('salesman expenses: cash only, up to the limit (FR-EXP-02)', () => {
