@@ -9,7 +9,8 @@ QSSols. Built to the SRS v1.1 (https://claude.ai/artifact/SMo2TLgcpy2wzc4m3kTwPY
 | `packages/domain` | Business rules with no I/O: money, units, costing, stock posting, product matching, AI-result checks, day closing, permissions |
 | `apps/api/prisma/schema.prisma` | PostgreSQL schema (SRS §6, ERD) |
 | `apps/api` | API server (NestJS): health, auth, permission guard. See `HANDOFF.md` for what is next |
-| `apps/web` | React PWA, not started yet |
+| `apps/web` | React PWA (Urdu/English), served by the API at `/` after a build |
+| `scripts/record-demo.mjs` | Records the demo video on a separate `_demo` database |
 
 ## Commands
 
@@ -21,7 +22,9 @@ npm test              # domain tests
 npm run typecheck
 npm run build         # domain, Prisma client and API
 npm run db:validate   # needs DATABASE_URL, see apps/api/.env.example
-npm run start --workspace @erp/api   # http://localhost:3000/api/health
+npm run build:all     # domain, API and web app
+npm run start --workspace @erp/api   # app on http://localhost:3000
+npm run demo:record   # docs/demo/shop-erp-demo.mp4 (needs Chrome and ffmpeg)
 ```
 
 ## Rules worth knowing before changing code
@@ -44,4 +47,7 @@ npm run start --workspace @erp/api   # http://localhost:3000/api/health
 | Permission matrix (§3.11) | Domain logic done and tested; * rows await owner confirmation |
 | Database schema | Written, passes `prisma validate`; no migration run yet |
 | Auth: login, sessions, lockout, permission guard (FR-AUTH-01/02, NFR-SEC-01/04) | Done and tested without DB |
-| Products, documents, scans, AI adapters, receipts, reports, PWA | Not started |
+| Products, parties, stock posting, scans (demo AI), receipts, day closing, reports, users (phases 1–3) | Done; 28 database tests |
+| Web app, all screens (phase 4) | Done; checked in the browser |
+| Demo video (phase 5) | `npm run demo:record` |
+| Real AI providers, row-level security, offline queue, returns/adjustments UI | Not started (see `HANDOFF.md`) |

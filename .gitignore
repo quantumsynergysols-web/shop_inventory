@@ -11,3 +11,7 @@ apps/api/prisma/setup-dev-db.sql
 
 # uploaded bill photos and receipts in development
 apps/api/storage/
+
+# demo videos are large; they are shared separately
+docs/demo/*.webm
+docs/demo/*.mp4
