@@ -12,12 +12,18 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "test": "npm run test --workspace @erp/domain",
-    "typecheck": "tsc -p packages/domain/tsconfig.json",
+    "build": "npm run build --workspace @erp/domain && npm run build --workspace @erp/api",
+    "test": "npm run test --workspace @erp/domain && npm run test --workspace @erp/api",
+    "typecheck": "tsc -p packages/domain/tsconfig.json && npm run typecheck --workspace @erp/api",
     "db:validate": "npm run db:validate --workspace @erp/api"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
     "typescript": "^5.8.3"
+  },
+  "allowScripts": {
+    "prisma@6.1.0": true,
+    "@prisma/client@6.1.0": true,
+    "@prisma/engines@6.1.0": true
   }
 }

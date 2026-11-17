@@ -8,7 +8,7 @@ QSSols. Built to the SRS v1.1 (https://claude.ai/artifact/SMo2TLgcpy2wzc4m3kTwPY
 |---|---|
 | `packages/domain` | Business rules with no I/O: money, units, costing, stock posting, product matching, AI-result checks, day closing, permissions |
 | `apps/api/prisma/schema.prisma` | PostgreSQL schema (SRS §6, ERD) |
-| `apps/api` | API server (NestJS), not scaffolded yet |
+| `apps/api` | API server (NestJS): health, auth, permission guard. See `HANDOFF.md` for what is next |
 | `apps/web` | React PWA, not started yet |
 
 ## Commands
@@ -19,7 +19,9 @@ Needs Node 22.18 or newer (TypeScript runs directly, no build step for tests).
 npm install
 npm test              # domain tests
 npm run typecheck
+npm run build         # domain, Prisma client and API
 npm run db:validate   # needs DATABASE_URL, see apps/api/.env.example
+npm run start --workspace @erp/api   # http://localhost:3000/api/health
 ```
 
 ## Rules worth knowing before changing code
@@ -41,4 +43,5 @@ npm run db:validate   # needs DATABASE_URL, see apps/api/.env.example
 | Day closing, expenses, profit (§3.10a) | Domain logic done and tested |
 | Permission matrix (§3.11) | Domain logic done and tested; * rows await owner confirmation |
 | Database schema | Written, passes `prisma validate`; no migration run yet |
-| API, auth, AI adapters, receipts, reports, PWA | Not started |
+| Auth: login, sessions, lockout, permission guard (FR-AUTH-01/02, NFR-SEC-01/04) | Done and tested without DB |
+| Products, documents, scans, AI adapters, receipts, reports, PWA | Not started |

@@ -164,9 +164,28 @@ model User {
   dayClosings DayClosing[]
   expenses    Expense[]
   auditLogs   AuditLog[]
+  sessions    Session[]
 
   @@index([shopId])
   @@map("app_user")
+}
+
+/// Login session on one device (FR-AUTH-01). Only a SHA-256 hash of the refresh token is stored.
+/// expiresAt slides forward on every refresh, so a device stays signed in until 30 days without use.
+model Session {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  tokenHash  String    @unique
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("session")
 }
 
 model Category {
