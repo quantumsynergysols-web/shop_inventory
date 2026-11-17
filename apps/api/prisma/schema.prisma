@@ -10,12 +10,15 @@
 // - Average cost is not stored; it is stockValuePaisa / onHand (see packages/domain/src/costing.ts).
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url        = env("DATABASE_URL")
+  /// pg_trgm: fuzzy product and party search (FR-PRD-02, FR-REV-04)
+  extensions = [pg_trgm]
 }
 
 enum Role {
@@ -234,6 +237,7 @@ model Product {
 
   @@unique([shopId, sku])
   @@index([shopId, normalizedName])
+  @@index([normalizedName(ops: raw("gin_trgm_ops"))], type: Gin, map: "product_normalizedName_trgm_idx")
   @@map("product")
 }
 
@@ -263,6 +267,7 @@ model ProductAlias {
 
   @@unique([productId, normalized, partyId])
   @@index([normalized])
+  @@index([normalized(ops: raw("gin_trgm_ops"))], type: Gin, map: "product_alias_normalized_trgm_idx")
   @@map("product_alias")
 }
 
@@ -303,6 +308,7 @@ model Party {
   ledger    LedgerEntry[]
 
   @@index([shopId, normalizedName])
+  @@index([normalizedName(ops: raw("gin_trgm_ops"))], type: Gin, map: "party_normalizedName_trgm_idx")
   @@map("party")
 }
 
