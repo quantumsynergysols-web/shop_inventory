@@ -22,7 +22,7 @@ import { hash } from '@node-rs/argon2';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const api = join(root, 'apps/api');
 const outDir = join(root, 'docs/demo');
-// Urdu narration, one clip per step (FameSpeak voice "Asad", ur-PK): docs/demo/voice/step-NN.mp3
+// Urdu narration, one clip per step (ElevenLabs voice "Amjid" via FameSpeak): docs/demo/voice/step-NN.mp3
 const voiceDir = join(outDir, 'voice');
 const clip = (n) => join(voiceDir, `step-${String(n).padStart(2, '0')}.mp3`);
 const clipSeconds = (n) => (existsSync(clip(n)) ? Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', clip(n)]).toString().trim()) : 0);

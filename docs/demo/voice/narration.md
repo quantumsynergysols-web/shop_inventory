@@ -1,6 +1,6 @@
 # Demo narration (Urdu)
 
-Voice: FameSpeak "Asad" (ur-PK, free tier), one clip per caption step of `scripts/record-demo.mjs`.
+Voice: ElevenLabs "Amjid – Urdu Documentary Narrator" (voice id vH5LP38dcYJ3CIbC2rKX) through FameSpeak, about 1,775 credits for all 20 clips; one clip per caption step of `scripts/record-demo.mjs`. The earlier free "Asad" (ur-PK) clips are kept in `docs/demo/voice-asad/`.
 To regenerate a clip, speak the line with the same voice and save it as `step-NN.mp3`; the recorder
 reads each clip's length and waits for it.
 
