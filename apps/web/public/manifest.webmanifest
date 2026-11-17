@@ -1,0 +1,12 @@
+{
+  "name": "Shop Inventory ERP",
+  "short_name": "Dukan ERP",
+  "description": "Photo of a bill, and the stock updates itself.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f7fa",
+  "theme_color": "#2440c9",
+  "lang": "ur",
+  "dir": "rtl",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

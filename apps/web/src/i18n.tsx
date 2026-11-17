@@ -1,0 +1,93 @@
+import { createContext, useContext } from 'react';
+
+/** UI text (SRS C-6): Urdu (default, right-to-left) and English. Product names and numbers stay in Latin script. */
+const ur = {
+  appName: 'دکان ای آر پی',
+  login: 'لاگ اِن', loginHint: 'فون نمبر یا ای میل', password: 'پاس ورڈ', signIn: 'داخل ہوں', badLogin: 'فون/ای میل یا پاس ورڈ غلط ہے', locked: 'بہت زیادہ غلط کوششیں۔ کچھ دیر بعد کوشش کریں',
+  hello: 'السلام علیکم', value: 'اسٹاک کی مالیت', todayIn: 'آج کی خریداری', todayOut: 'آج کی فروخت',
+  inBtn: 'خریداری', inSub: 'سپلائر کے بل کی تصویر لیں', outBtn: 'فروخت', outSub: 'سیل بل کی تصویر لیں',
+  manual: 'بغیر تصویر کے اندراج', low: 'کم اسٹاک', all: 'سب دیکھیں', recent: 'حالیہ لین دین', left: 'باقی', min: 'کم از کم حد', pending: 'چیک ہونا باقی',
+  nHome: 'ہوم', nScan: 'اسکین', nStock: 'اسٹاک', nLedger: 'کھاتہ', nMore: 'مزید',
+  todayProfit: 'آج کا خالص منافع', grossToday: 'آج کا مجموعی منافع', dayOpen: 'دن جاری ہے', dayClosed: 'دن بند ہو چکا', closeDay: 'ڈے کلوزنگ',
+  capIn: 'سپلائر بل (خریداری)', capOut: 'سیل بل (فروخت)', addPhoto: 'تصویر لیں یا گیلری سے چنیں', page: 'صفحہ', upload: 'بل پڑھیں', tipStraight: 'کاغذ سیدھا رکھیں، روشنی اچھی ہو، پورا صفحہ نظر آئے',
+  tooDark: 'تصویر بہت اندھیری ہے، دوبارہ لیں', maxPages: 'زیادہ سے زیادہ 10 صفحات',
+  reading: 'بل پڑھا جا رہا ہے', readDone: 'بل پڑھ لیا گیا', failed: 'بل نہیں پڑھا جا سکا', retry: 'دوبارہ کوشش', typeManually: 'خود لکھیں',
+  review: 'بل چیک کریں', demoMode: 'ڈیمو موڈ: AI کی نہیں لگی۔ ریڈنگ پہلے سے ریکارڈ شدہ ہے یا خالی، تصویر دیکھ کر ٹھیک کریں',
+  manualMode: 'اس تصویر کی لائنیں خود لکھیں، تصویر ساتھ موجود ہے',
+  missingRows: (s: string) => `کاغذ پر سیریل ${s} نہیں ملے، لائنیں چھوٹ گئی ہو سکتی ہیں`, totalMismatch: 'لائنوں کا جوڑ بل کے ٹوٹل سے نہیں ملتا', dupPhoto: 'یہ تصویر پہلے بھی محفوظ ہو چکی ہے',
+  supplier: 'سپلائر', customer: 'گاہک', pickParty: 'منتخب کریں', walkIn: 'واک اِن', newParty: 'نیا', suggested: 'تصویر سے ملا',
+  tabAll: 'سب', tabNeed: 'دیکھنی ہیں', match: 'موجود', newP: 'نئی پروڈکٹ', pick: 'پروڈکٹ چنیں', doubt: 'غیر یقینی', short: 'ناکافی اسٹاک', ok: 'ٹھیک ہے', fixed: 'ٹھیک',
+  amountMismatch: 'مقدار × ریٹ ٹوٹل سے نہیں ملتا', fromList: 'ریٹ نہیں لکھا، لسٹ پرائس لگی',
+  priceChanged: (a: string, b: string) => `قیمت بدلی: ${a} سے ${b}`, onlyStock: (n: string) => `دستیاب اسٹاک صرف ${n}`,
+  sumLines: 'لائنوں کا جوڑ', sumPaper: 'بل کا ٹوٹل', sumOk: 'دونوں برابر ہیں', needN: (n: number) => `${n} لائنیں ٹھیک کرنی باقی ہیں`, ready: 'سب ٹھیک ہے',
+  confirmIn: 'خریداری محفوظ کریں (اسٹاک اِن)', confirmOut: 'فروخت محفوظ کریں اور رسید بنائیں', addLine: 'لائن شامل کریں', discard: 'منسوخ کریں', discardQ: 'یہ اسکین منسوخ کریں؟',
+  line: 'لائن', written: 'کاغذ پر لکھا', product: 'پروڈکٹ', qty: 'مقدار', unit: 'یونٹ', rate: 'ریٹ', amount: 'رقم', remove: 'لائن ہٹائیں', save: 'محفوظ کریں', cancel: 'واپس',
+  searchProduct: 'پروڈکٹ تلاش کریں', createProduct: 'نئی پروڈکٹ بنائیں', salePrice: 'قیمتِ فروخت', purchasePrice: 'قیمتِ خرید', category: 'کیٹیگری', minLevel: 'کم از کم حد',
+  payment: 'ادائیگی', received: 'وصول رقم', paidNow: 'ابھی ادا', udhaar: 'ادھار', cash: 'نقد', bank: 'بینک', jazz: 'جاز کیش', easy: 'ایزی پیسہ', fullCash: 'پورا نقد', discount: 'رعایت',
+  saved: 'محفوظ ہو گیا', doneIn: 'خریداری محفوظ ہو گئی', doneOut: 'فروخت محفوظ ہو گئی', lowNow: 'کم اسٹاک', whatsapp: 'واٹس ایپ', print: 'پرنٹ', home: 'ہوم پر جائیں', receipt: 'رسید',
+  voided: 'منسوخ شدہ', voidDoc: 'بل منسوخ کریں (void)', voidReason: 'وجہ لکھیں',
+  stock: 'اسٹاک', search: 'نام، عرف یا SKU لکھیں', lowOnly: 'صرف کم اسٹاک', newProduct: 'نئی پروڈکٹ', onHand: 'موجود', avgCost: 'اوسط لاگت', history: 'تاریخ', aliases: 'عرف (جیسے بل پر لکھا جاتا ہے)',
+  ledger: 'کھاتہ', parties: 'سپلائر اور گاہک', theyOwe: 'ان سے لینا ہے', weOwe: 'انہیں دینا ہے', settled: 'برابر', recordPayment: 'ادائیگی درج کریں', receivedFrom: 'وصولی', paidTo: 'ادائیگی', name: 'نام', phone: 'فون', type: 'قسم', openingBal: 'پرانا بقایا',
+  today: 'ڈے اینڈ کلوزنگ', sale: 'کل فروخت', bills: 'بل', cashSale: 'نقد فروخت', bankSale: 'بینک / جاز کیش', creditSale: 'ادھار فروخت',
+  profitT: 'منافع', cogs: 'فروخت شدہ مال کی لاگت', gross: 'مجموعی منافع', margin: 'منافع کی شرح', expenses: 'اخراجات', net: 'خالص منافع', addExp: 'خرچ درج کریں',
+  other: 'دیگر لین دین', purchases: 'آج کی خریداری', wasooli: 'گاہکوں سے وصولی', supPaid: 'سپلائر کو ادائیگی', returns: 'واپسی',
+  galla: 'کیش (گلّہ)', opening: 'اوپننگ کیش', plusCash: 'نقد فروخت', plusWas: 'نقد وصولی', minusExp: 'نقد اخراجات', minusSup: 'سپلائر کو نقد ادائیگی', minusRef: 'نقد واپسی (ریفنڈ)', expected: 'متوقع کیش',
+  counted: 'اصل کیش (گنا ہوا)', countHint: 'گلّہ گن کر رقم لکھیں', diffEq: 'کیش برابر ہے', diffShort: (n: string) => `کیش کم (شارٹ): ${n}`, diffOver: (n: string) => `کیش زیادہ (اوور): ${n}`,
+  noteNeed: 'فرق زیادہ ہے، وجہ لکھیں', closeBtn: 'دن بند کریں', closedT: 'آج کا دن بند ہو گیا', closedSub: 'کل کا اوپننگ کیش', lockNote: 'بند دن میں ترمیم صرف مالک دوبارہ کھول کر کر سکتا ہے', reopen: 'دن دوبارہ کھولیں',
+  pendingScans: (n: number) => `آج کے ${n} اسکین ابھی محفوظ نہیں ہوئے`, closeAnyway: 'پھر بھی بند کریں', notAllowed: 'آپ کو اس کی اجازت نہیں',
+  more: 'مزید', reports: 'رپورٹس', stockLedger: 'اسٹاک لیجر', valuation: 'اسٹاک کی مالیت', partyBal: 'کھاتوں کے بقایا', month: 'ماہانہ حساب', users: 'یوزرز', settings: 'دکان کی سیٹنگز', logout: 'لاگ آؤٹ', language: 'زبان', theme: 'روشنی / اندھیرا',
+  addUser: 'نیا یوزر', role: 'عہدہ', active: 'فعال', disabled: 'بند', resetPw: 'پاس ورڈ بدلیں', shopName: 'دکان کا نام', address: 'پتہ', footer: 'رسید کے نیچے لکھا', markup: 'منافع % (نئی پروڈکٹ)', negStock: 'اسٹاک سے زیادہ فروخت کی اجازت', salesmanClose: 'سیلز مین دن بند کر سکے',
+  roles: { OWNER: 'مالک', SALESMAN: 'سیلز مین', STOREKEEPER: 'اسٹور کیپر', ACCOUNTANT: 'اکاؤنٹنٹ' } as Record<string, string>,
+  bestSelling: 'سب سے زیادہ بکنے والی', mostProfit: 'سب سے زیادہ منافع', download: 'ڈاؤن لوڈ',
+  error: 'کچھ غلط ہو گیا', offline: 'انٹرنیٹ نہیں ہے', loading: 'لوڈ ہو رہا ہے',
+};
+
+type Dict = typeof ur;
+
+const en: Dict = {
+  appName: 'Shop ERP',
+  login: 'Log in', loginHint: 'Phone number or email', password: 'Password', signIn: 'Sign in', badLogin: 'Phone/email or password is wrong', locked: 'Too many wrong tries. Try again later',
+  hello: 'Assalam o Alaikum', value: 'Stock value', todayIn: 'Purchases today', todayOut: 'Sales today',
+  inBtn: 'Purchase', inSub: 'Photo of the supplier bill', outBtn: 'Sale', outSub: 'Photo of the sale bill',
+  manual: 'Entry without a photo', low: 'Low stock', all: 'See all', recent: 'Recent transactions', left: 'in stock', min: 'reorder level', pending: 'waiting for review',
+  nHome: 'Home', nScan: 'Scan', nStock: 'Inventory', nLedger: 'Ledger', nMore: 'More',
+  todayProfit: "Today's net profit", grossToday: "Today's gross profit", dayOpen: 'Day open', dayClosed: 'Day closed', closeDay: 'Day-end closing',
+  capIn: 'Supplier bill (purchase)', capOut: 'Sale bill', addPhoto: 'Take a photo or choose from gallery', page: 'page', upload: 'Read the bill', tipStraight: 'Keep the page flat, in good light, fully in view',
+  tooDark: 'Photo is too dark, take it again', maxPages: 'At most 10 pages',
+  reading: 'Reading the bill', readDone: 'Bill read', failed: 'The bill could not be read', retry: 'Try again', typeManually: 'Type it in',
+  review: 'Review bill', demoMode: 'Demo mode: no AI key. The reading is pre-recorded or empty; check it against the photo',
+  manualMode: 'Type the lines of this photo yourself; the photo is shown for reference',
+  missingRows: (s: string) => `Serial ${s} not found on the paper; rows may be missing`, totalMismatch: 'Line total does not match the bill total', dupPhoto: 'This photo was saved before',
+  supplier: 'Supplier', customer: 'Customer', pickParty: 'Choose', walkIn: 'Walk-in', newParty: 'New', suggested: 'Read from photo',
+  tabAll: 'All', tabNeed: 'To check', match: 'Matched', newP: 'New product', pick: 'Choose product', doubt: 'Low confidence', short: 'Insufficient stock', ok: 'Done', fixed: 'Fixed',
+  amountMismatch: 'Qty × rate does not match the total', fromList: 'No rate written; list price used',
+  priceChanged: (a: string, b: string) => `Price changed: ${a} to ${b}`, onlyStock: (n: string) => `Only ${n} in stock`,
+  sumLines: 'Line total', sumPaper: 'Bill total', sumOk: 'Both match', needN: (n: number) => `${n} lines still to fix`, ready: 'All good',
+  confirmIn: 'Save purchase (stock in)', confirmOut: 'Save sale & create receipt', addLine: 'Add line', discard: 'Discard', discardQ: 'Discard this scan?',
+  line: 'Line', written: 'Written on paper', product: 'Product', qty: 'Quantity', unit: 'Unit', rate: 'Rate', amount: 'Amount', remove: 'Remove line', save: 'Save', cancel: 'Back',
+  searchProduct: 'Search product', createProduct: 'Create new product', salePrice: 'Sale price', purchasePrice: 'Purchase price', category: 'Category', minLevel: 'Reorder level',
+  payment: 'Payment', received: 'Amount received', paidNow: 'Paid now', udhaar: 'Credit (udhaar)', cash: 'Cash', bank: 'Bank', jazz: 'JazzCash', easy: 'Easypaisa', fullCash: 'Full cash', discount: 'Discount',
+  saved: 'Saved', doneIn: 'Purchase saved', doneOut: 'Sale saved', lowNow: 'Low stock', whatsapp: 'WhatsApp', print: 'Print', home: 'Go home', receipt: 'Receipt',
+  voided: 'Voided', voidDoc: 'Void this bill', voidReason: 'Reason',
+  stock: 'Inventory', search: 'Name, alias or SKU', lowOnly: 'Low stock only', newProduct: 'New product', onHand: 'On hand', avgCost: 'Average cost', history: 'History', aliases: 'Aliases (as written on bills)',
+  ledger: 'Ledger', parties: 'Suppliers and customers', theyOwe: 'They owe us', weOwe: 'We owe them', settled: 'Settled', recordPayment: 'Record payment', receivedFrom: 'Received', paidTo: 'Paid', name: 'Name', phone: 'Phone', type: 'Type', openingBal: 'Opening balance',
+  today: 'Day-end closing', sale: 'Total sales', bills: 'bills', cashSale: 'Cash sales', bankSale: 'Bank / JazzCash', creditSale: 'Credit sales',
+  profitT: 'Profit', cogs: 'Cost of goods sold (COGS)', gross: 'Gross profit', margin: 'Gross margin', expenses: 'Expenses', net: 'Net profit', addExp: 'Add expense',
+  other: 'Other transactions', purchases: 'Purchases today', wasooli: 'Collections from customers', supPaid: 'Paid to suppliers', returns: 'Returns',
+  galla: 'Cash in hand', opening: 'Opening cash', plusCash: 'Cash sales', plusWas: 'Cash collections', minusExp: 'Cash expenses', minusSup: 'Cash paid to suppliers', minusRef: 'Cash refunds', expected: 'Expected cash',
+  counted: 'Actual cash (counted)', countHint: 'Count the cash and enter the amount', diffEq: 'Cash matches', diffShort: (n: string) => `Cash short: ${n}`, diffOver: (n: string) => `Cash over: ${n}`,
+  noteNeed: 'Large difference, add a reason', closeBtn: 'Close the day', closedT: 'Day closed', closedSub: "Tomorrow's opening cash", lockNote: 'Only the owner can change a closed day, by reopening it', reopen: 'Reopen the day',
+  pendingScans: (n: number) => `${n} scan(s) of today are not saved yet`, closeAnyway: 'Close anyway', notAllowed: 'You are not allowed to do this',
+  more: 'More', reports: 'Reports', stockLedger: 'Stock ledger', valuation: 'Stock valuation', partyBal: 'Party balances', month: 'Monthly closing', users: 'Users', settings: 'Shop settings', logout: 'Log out', language: 'Language', theme: 'Light / Dark',
+  addUser: 'New user', role: 'Role', active: 'Active', disabled: 'Disabled', resetPw: 'Reset password', shopName: 'Shop name', address: 'Address', footer: 'Receipt footer', markup: 'Markup % (new products)', negStock: 'Allow selling beyond stock', salesmanClose: 'Salesman may close the day',
+  roles: { OWNER: 'Owner', SALESMAN: 'Salesman', STOREKEEPER: 'Storekeeper', ACCOUNTANT: 'Accountant' },
+  bestSelling: 'Best selling', mostProfit: 'Most profitable', download: 'Download',
+  error: 'Something went wrong', offline: 'No internet connection', loading: 'Loading',
+};
+
+export const DICTS = { ur, en };
+export type Lang = keyof typeof DICTS;
+export type T = Dict;
+
+export const LangContext = createContext<{ lang: Lang; t: T; setLang: (l: Lang) => void }>({ lang: 'ur', t: ur, setLang: () => {} });
+export const useT = () => useContext(LangContext);

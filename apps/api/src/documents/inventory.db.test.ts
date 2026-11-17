@@ -56,6 +56,7 @@ describe('inventory against PostgreSQL', { skip: !url && 'TEST_DATABASE_URL not 
   STORAGE_DIR: join(tmpdir(), 'erp-test-storage'),
   AI_PROVIDER: 'demo',
   DEMO_FIXTURES_DIR: join(tmpdir(), 'erp-test-no-fixtures'),
+    WEB_DIST: join(tmpdir(), 'erp-test-no-web'),
     };
     app = await createApp(config, {}, { quiet: true });
     await app.listen(0);

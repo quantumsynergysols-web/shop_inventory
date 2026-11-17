@@ -1,0 +1,102 @@
+{
+  "sha256": "5b09201982802d586ffc0cb54420562c040d5ccff9e5422299d0f63c58eef0d3",
+  "description": "Sample sale bill from prototype v0.2 (made-up shop and amounts). Recorded demo reading.",
+  "result": {
+    "partyName": "Rana Builders",
+    "billNo": "0883",
+    "date": null,
+    "billTotal": 49100,
+    "lines": [
+      {
+        "line_no": 1,
+        "raw_name": "PVC pipe 1\"",
+        "qty": 10,
+        "unit": null,
+        "rate": 650,
+        "line_total": 6500,
+        "confidence": 0.96,
+        "bbox": [
+          0.03,
+          0.2317,
+          0.92,
+          0.0561
+        ]
+      },
+      {
+        "line_no": 2,
+        "raw_name": "Elbow 1\"",
+        "qty": 25,
+        "unit": null,
+        "rate": 60,
+        "line_total": 1500,
+        "confidence": 0.96,
+        "bbox": [
+          0.03,
+          0.2878,
+          0.92,
+          0.0561
+        ]
+      },
+      {
+        "line_no": 3,
+        "raw_name": "Fan 48\"",
+        "qty": 2,
+        "unit": null,
+        "rate": 4800,
+        "line_total": 9600,
+        "confidence": 0.96,
+        "bbox": [
+          0.03,
+          0.3439,
+          0.92,
+          0.0561
+        ]
+      },
+      {
+        "line_no": 4,
+        "raw_name": "8 gang board",
+        "qty": 30,
+        "unit": null,
+        "rate": 780,
+        "line_total": 23400,
+        "confidence": 0.96,
+        "bbox": [
+          0.03,
+          0.4,
+          0.92,
+          0.0561
+        ]
+      },
+      {
+        "line_no": 5,
+        "raw_name": "Tee ¾",
+        "qty": 60,
+        "unit": null,
+        "rate": 45,
+        "line_total": 2700,
+        "confidence": 0.96,
+        "bbox": [
+          0.03,
+          0.4561,
+          0.92,
+          0.0561
+        ]
+      },
+      {
+        "line_no": 6,
+        "raw_name": "Gate valve 1\"",
+        "qty": 4,
+        "unit": null,
+        "rate": 1350,
+        "line_total": 5400,
+        "confidence": 0.96,
+        "bbox": [
+          0.03,
+          0.5122,
+          0.92,
+          0.0561
+        ]
+      }
+    ]
+  }
+}

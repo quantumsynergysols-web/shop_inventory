@@ -1,6 +1,6 @@
 # Handoff – Shop Inventory ERP
 
-Last updated: 17 Nov 2026 (end of phase 3). Read this first in the next session.
+Last updated: 17 Nov 2026 (end of phase 4). Read this first in the next session.
 
 ## Where things stand
 - Project folder: `C:\Quantum Synergy Solutions Projects\Shop_Inventory_ERP`, git `main`, remote https://github.com/quantumsynergysols-web/shop_inventory (push as star-anonymus; this repo's git email is the GitHub noreply address). Repo is public.
@@ -36,10 +36,18 @@ Last updated: 17 Nov 2026 (end of phase 3). Read this first in the next session.
 |---|---|---|
 | 1 | Backend core: products, categories, parties, payments, manual purchase/sale posting, void, DB tests | done (b984639) |
 | 2 | Scan flow (a16293c): photo upload + local storage, AI adapter interface + demo adapter (FR-AI-08), `checkExtraction`, `matchProduct`, review/autosave, confirm via `DocumentsService.postInTx` with alias learning (FR-REV-05), receipts | done |
-| 3 | Dashboard, day closing + expenses (use `summarizeDay`; exclude voided sales and their voids), reports CSV/XLSX, users module (FR-AUTH-04); shop isolation tested through the API | done (row-level security moved to hardening) |
-| 4 | Web app: React PWA, Urdu/English, prototype v0.2 design, all screens | next |
+| 3 | (7143e75) Dashboard, day closing + expenses (use `summarizeDay`; exclude voided sales and their voids), reports CSV/XLSX, users module (FR-AUTH-04); shop isolation tested through the API | done (row-level security moved to hardening) |
+| 4 | Web app: React PWA, Urdu/English, prototype v0.2 design, all screens | done |
 | H | Hardening: row-level security (NFR-SEC-02), pg-boss queue for scans, perceptual photo hash, expense receipt photo, returns/adjustments/opening-stock UI, AI settings screen (FR-SET-02) | – |
-| 5 | Video demo (Playwright driving the installed Chrome, `channel: 'chrome'`, records webm), real AI adapters once a key is available | – |
+| 5 | (next) Video demo (Playwright driving the installed Chrome, `channel: 'chrome'`, records webm), real AI adapters once a key is available | – |
+
+Phase 4 (web app, `apps/web`):
+- React 19 + Vite 8, hash routes in `src/App.tsx`, screens in `src/screens/`: Login, Home (dashboard), Scan capture (compress to 2,000 px, dark-photo warning) + processing poll + Review (photo crops per row from bbox, flags, suggestions, product search/create, party picker with photo suggestion, payments, autosave, confirm with Idempotency-Key), Doc (stock before→after, receipt iframe, WhatsApp, print, owner void), Manual entry, Stock list/detail (owner edits prices), Ledger (balances, history, payments), Day closing (expenses, galla count, close, reopen), More (reports Excel/CSV, monthly view, users, settings, language, theme, logout).
+- The API serves `apps/web/dist` at `/` when it exists (`WEB_DIST`), so one port runs everything: `npm run build && npm run start --workspace @erp/api` → http://localhost:3000. `.claude/launch.json` has the same as "erp".
+- Checked in the browser pane at 375×812, Urdu and English: login, home, stock, day closing, scan review incl. creating a product from the review sheet, sale result + receipt, ledger, more. Screens load data slowly the first time because of Google Fonts.
+- Dev database now has demo data (7 products, Al-Madina supplier, Rana Builders customer, PUR-000001, SAL-000001/2) and one purchase scan of the sample bill left half-reviewed.
+- Sample bills for the demo (phase 5 work done early): `apps/api/scripts/make-demo-bills.mjs` draws `apps/api/demo-fixtures/{purchase,sale}-bill.png` with Chrome and writes the recorded demo readings (purchase reading misses row 5 and is unsure of row 6; sale bill asks 60 Tee with 45 in stock).
+- Not built in the web app yet: offline upload queue (FR-SCAN-07), auto-crop/de-skew (FR-SCAN-06), bill discount field (FR-REV-13), page reordering.
 
 Notes for later phases:
 - Scan extraction is in-process; a restart while PROCESSING leaves the scan stuck. Phase 3/5: pg-boss queue, or on startup move PROCESSING scans to FAILED so the user can retry.

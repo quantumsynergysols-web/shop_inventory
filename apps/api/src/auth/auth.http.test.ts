@@ -20,6 +20,7 @@ const config: AppConfig = {
   STORAGE_DIR: join(tmpdir(), 'erp-test-storage'),
   AI_PROVIDER: 'demo',
   DEMO_FIXTURES_DIR: join(tmpdir(), 'erp-test-no-fixtures'),
+    WEB_DIST: join(tmpdir(), 'erp-test-no-web'),
 };
 
 let app: INestApplication;

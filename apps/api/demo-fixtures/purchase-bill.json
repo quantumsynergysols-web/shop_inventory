@@ -1,0 +1,87 @@
+{
+  "sha256": "10a34dcb5c07ca55f0a9b2783b03d4ee4d5e8aaca3fc07bec3091966bc1d9d22",
+  "description": "Sample purchase bill from prototype v0.2 (made-up shop and amounts). Recorded demo reading; row 5 deliberately missed.",
+  "result": {
+    "partyName": "Al-Madina Sanitary",
+    "billNo": "2417",
+    "date": null,
+    "billTotal": 146200,
+    "lines": [
+      {
+        "line_no": 1,
+        "raw_name": "PVC pipe 1\" 10ft",
+        "qty": 50,
+        "unit": null,
+        "rate": 450,
+        "line_total": 22500,
+        "confidence": 0.96,
+        "bbox": [
+          0.03,
+          0.2317,
+          0.92,
+          0.0561
+        ]
+      },
+      {
+        "line_no": 2,
+        "raw_name": "Elbow 1\"",
+        "qty": 100,
+        "unit": null,
+        "rate": 35,
+        "line_total": 3500,
+        "confidence": 0.96,
+        "bbox": [
+          0.03,
+          0.2878,
+          0.92,
+          0.0561
+        ]
+      },
+      {
+        "line_no": 3,
+        "raw_name": "Ceiling fan 48\"",
+        "qty": 12,
+        "unit": null,
+        "rate": 3850,
+        "line_total": 46200,
+        "confidence": 0.96,
+        "bbox": [
+          0.03,
+          0.3439,
+          0.92,
+          0.0561
+        ]
+      },
+      {
+        "line_no": 4,
+        "raw_name": "8 gang board",
+        "qty": 30,
+        "unit": null,
+        "rate": 620,
+        "line_total": 18600,
+        "confidence": 0.96,
+        "bbox": [
+          0.03,
+          0.4,
+          0.92,
+          0.0561
+        ]
+      },
+      {
+        "line_no": 6,
+        "raw_name": "Ball valve ½",
+        "qty": 40,
+        "unit": null,
+        "rate": 260,
+        "line_total": 10400,
+        "confidence": 0.71,
+        "bbox": [
+          0.03,
+          0.5122,
+          0.92,
+          0.0561
+        ]
+      }
+    ]
+  }
+}

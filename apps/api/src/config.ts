@@ -17,6 +17,8 @@ const schema = z.object({
   AI_PROVIDER: z.enum(['demo']).default('demo'),
   /** Recorded AI results for known sample bills, used by the demo provider */
   DEMO_FIXTURES_DIR: z.string().default('demo-fixtures'),
+  /** Built web app (apps/web/dist) served at / when present, so one port serves the PWA and the API */
+  WEB_DIST: z.string().default('../web/dist'),
 });
 
 export type AppConfig = z.infer<typeof schema>;
