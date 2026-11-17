@@ -1,6 +1,6 @@
 # Handoff – Shop Inventory ERP
 
-Last updated: 17 Nov 2026 (end of phase 2). Read this first in the next session.
+Last updated: 17 Nov 2026 (end of phase 3). Read this first in the next session.
 
 ## Where things stand
 - Project folder: `C:\Quantum Synergy Solutions Projects\Shop_Inventory_ERP`, git `main`, remote https://github.com/quantumsynergysols-web/shop_inventory (push as star-anonymus; this repo's git email is the GitHub noreply address). Repo is public.
@@ -10,7 +10,8 @@ Last updated: 17 Nov 2026 (end of phase 2). Read this first in the next session.
 - Database `shop_erp` on local PostgreSQL 18 (user `erp_dev`): migrations `init` and `search_trgm` (pg_trgm GIN indexes on product/alias/party names, also declared in the schema so `migrate dev` sees no drift). Seeded: "Demo Shop", 1 owner, 6 categories, 7 expense heads, Walk-in customer. Owner login phone/password are in `apps/api/.env` (`SEED_OWNER_*`). Login, me and refresh verified against the real database.
 - Phase 1 API (all shop-scoped, role-checked): `GET/POST/PATCH /api/products` (pg_trgm typo search, auto SKU, suggested sale price from markup, price history), `GET/POST /api/categories`, `GET/POST /api/parties` (+ balance from ledger, history), `POST /api/parties/:id/payments` (wasooli / supplier payment), `GET/POST /api/documents` (manual PURCHASE/SALE: row locks, `postDocument`, doc numbers, receipt numbers, payments, ledger, Idempotency-Key header, day lock), `POST /api/documents/:id/void` (owner; VOID document with reversed movements, ledger and payments). Domain errors map to HTTP in `common/domain-errors.filter.ts` (stock shortage = 409 with every short line).
 - Phase 2 API (scan flow): `POST /api/scans` (multipart `type` + 1–10 `pages`, 15 MB each; photos kept on disk under `apps/api/storage/`, git-ignored; exact-duplicate photos flagged), extraction runs in-process in the background (`ScansService.running`), every page read in parallel by the `AiProvider` (only `DemoAiProvider` exists: recorded readings for known sample photos from `apps/api/demo-fixtures/*.json` keyed by SHA-256, otherwise empty rows = manual mode FR-AI-08), then `checkExtraction` + trigram candidates + `matchProduct`. `GET /api/scans`, `GET /api/scans/:id` (lines in review order with flags, suggestions, short stock, price diff, suggested party, `blockingCount`), `GET /api/scans/:id/pages/:n` (photo), `PUT /api/scans/:id/lines` (autosave, keeps paper order), `POST /api/scans/:id/retry|manual|discard|confirm` (confirm posts through `DocumentsService.postInTx`, learns aliases per supplier, safe to repeat). `GET /api/documents/:id/receipt?paper=58|80|a4` (printable HTML, VOID watermark, FBR disclaimer) and `GET /api/documents/:id/share` (WhatsApp text + wa.me link).
-- Tests: `npm test` = 49 domain + 8 API (no DB). `npm run test:db --workspace @erp/api` = 19 integration tests (10 inventory + 9 scan flow) on `shop_erp_test` (created automatically), incl. two sales racing for the last stock and double-tap idempotency. `npm run typecheck` clean.
+- Phase 3 API: `GET /api/dashboard` (stock value and profit only for owner/accountant), `GET /api/day?date=` (summary via `summarizeDay`; same-day voids left out, voids of earlier sales count as today's returns), `POST /api/day/close` (note above limit, blocks on unconfirmed scans unless `force`, counted cash = next opening), `POST /api/day/reopen`, `GET /api/day/month?month=YYYY-MM`, `GET/POST /api/expense-heads`, `POST /api/expenses` (salesman: cash only, up to limit), `GET /api/reports/stock-ledger|stock-valuation|party-balances?format=json|csv|xlsx`, `GET/POST/PATCH /api/users`, `POST /api/users/:id/reset-password`, `GET/PATCH /api/settings`. Scans stuck in PROCESSING for 5+ minutes are marked FAILED at startup. Shared test helpers in `apps/api/src/test-support/db-app.ts`.
+- Tests: `npm test` = 49 domain + 8 API (no DB). `npm run test:db --workspace @erp/api` = 28 integration tests (10 inventory + 9 scan flow + 9 day/reports/users/isolation) on `shop_erp_test` (created automatically), incl. two sales racing for the last stock and double-tap idempotency. `npm run typecheck` clean.
 
 ## Machine resources (checked 17 Nov 2026)
 | Need | Status | Plan |
@@ -34,9 +35,10 @@ Last updated: 17 Nov 2026 (end of phase 2). Read this first in the next session.
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Backend core: products, categories, parties, payments, manual purchase/sale posting, void, DB tests | done (b984639) |
-| 2 | Scan flow: photo upload + local storage, AI adapter interface + demo adapter (FR-AI-08), `checkExtraction`, `matchProduct`, review/autosave, confirm via `DocumentsService.postInTx` with alias learning (FR-REV-05), receipts | done |
-| 3 | Dashboard, day closing + expenses (use `summarizeDay`; exclude voided sales and their voids), reports CSV/XLSX, users module (FR-AUTH-04), row-level security (NFR-SEC-02) | next |
-| 4 | Web app: React PWA, Urdu/English, prototype v0.2 design, all screens | – |
+| 2 | Scan flow (a16293c): photo upload + local storage, AI adapter interface + demo adapter (FR-AI-08), `checkExtraction`, `matchProduct`, review/autosave, confirm via `DocumentsService.postInTx` with alias learning (FR-REV-05), receipts | done |
+| 3 | Dashboard, day closing + expenses (use `summarizeDay`; exclude voided sales and their voids), reports CSV/XLSX, users module (FR-AUTH-04); shop isolation tested through the API | done (row-level security moved to hardening) |
+| 4 | Web app: React PWA, Urdu/English, prototype v0.2 design, all screens | next |
+| H | Hardening: row-level security (NFR-SEC-02), pg-boss queue for scans, perceptual photo hash, expense receipt photo, returns/adjustments/opening-stock UI, AI settings screen (FR-SET-02) | – |
 | 5 | Video demo (Playwright driving the installed Chrome, `channel: 'chrome'`, records webm), real AI adapters once a key is available | – |
 
 Notes for later phases:

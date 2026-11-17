@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, Logger, NotFoundException, type OnApplicationBootstrap } from '@nestjs/common';
 import { Prisma, type PayMode, type ScanStatus, type ScanType } from '@prisma/client';
 import {
   can,
@@ -96,7 +96,7 @@ export interface LineEdit {
 const BLOCKING = new Set(['MISSING_QTY', 'MISSING_RATE', 'UNKNOWN_UNIT', 'BAD_NUMBER']);
 
 @Injectable()
-export class ScansService {
+export class ScansService implements OnApplicationBootstrap {
   private readonly log = new Logger('Scans');
   /** Running extractions, so tests and shutdown can wait for them */
   readonly running = new Map<string, Promise<void>>();
@@ -107,6 +107,17 @@ export class ScansService {
     @Inject(FILE_STORAGE) private readonly storage: FileStorage,
     @Inject(AI_PROVIDER) private readonly ai: AiProvider,
   ) {}
+
+  /**
+   * Extraction runs in-process, so a restart drops work in flight. Scans left PROCESSING for more
+   * than 5 minutes are marked FAILED; the user retries or continues manually (FR-AI-07).
+   */
+  async onApplicationBootstrap(): Promise<void> {
+    const r = await this.db.scan
+      .updateMany({ where: { status: 'PROCESSING', updatedAt: { lt: new Date(Date.now() - 5 * 60_000) } }, data: { status: 'FAILED', failureReason: 'Reading was interrupted (server restarted). Retry or continue manually.' } })
+      .catch(() => ({ count: 0 }));
+    if (r.count) this.log.warn(`marked ${r.count} interrupted scan(s) as failed`);
+  }
 
   private assertCanScan(user: AuthUser, type: ScanType): void {
     const action = type === 'SALE' ? 'sale.create' : 'purchase.create';

@@ -18,6 +18,11 @@ import { AI_PROVIDER, DemoAiProvider } from './scans/ai-provider.js';
 import { ScansController } from './scans/scans.controller.js';
 import { ScansService } from './scans/scans.service.js';
 import { FILE_STORAGE, LocalDiskStorage } from './storage/storage.js';
+import { DashboardController } from './dashboard/dashboard.controller.js';
+import { DayController } from './day/day.controller.js';
+import { DayService } from './day/day.service.js';
+import { ReportsController } from './reports/reports.controller.js';
+import { UsersController } from './users/users.controller.js';
 import { HealthController } from './health/health.controller.js';
 import { HEALTH_PROBE, type HealthProbe } from './health/health.probe.js';
 import { PrismaService } from './prisma/prisma.service.js';
@@ -45,6 +50,7 @@ export class AppModule {
       PartiesService,
       DocumentsService,
       ScansService,
+      DayService,
       { provide: FILE_STORAGE, useClass: LocalDiskStorage },
       DemoAiProvider,
       { provide: AI_PROVIDER, useExisting: DemoAiProvider },
@@ -54,7 +60,7 @@ export class AppModule {
     return {
       module: AppModule,
       imports: [JwtModule.register({ secret: config.JWT_SECRET, signOptions: { algorithm: 'HS256' }, verifyOptions: { algorithms: ['HS256'] } })],
-      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, ScansController],
+      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, ScansController, DashboardController, DayController, ReportsController, UsersController],
       providers,
     };
   }
