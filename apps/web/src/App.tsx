@@ -9,7 +9,7 @@ import { Login } from './screens/Login';
 import { Manual } from './screens/Manual';
 import { Month, More, Settings, Users } from './screens/More';
 import { ScanNew, ScanView } from './screens/Scan';
-import { ProductView, StockList } from './screens/Stock';
+import { OpeningImport, ProductView, StockList } from './screens/Stock';
 import { AppCtx, Loading, useRoute, useToast, type Route } from './ui';
 
 const LANG_KEY = 'erp.lang';
@@ -46,6 +46,8 @@ function Screen({ r }: { r: Route }) {
       return <Users />;
     case 'settings':
       return <Settings />;
+    case 'opening':
+      return <OpeningImport />;
     default:
       return <Home />;
   }

@@ -39,6 +39,10 @@ const ur = {
   addUser: 'نیا یوزر', role: 'عہدہ', active: 'فعال', disabled: 'بند', resetPw: 'پاس ورڈ بدلیں', shopName: 'دکان کا نام', address: 'پتہ', footer: 'رسید کے نیچے لکھا', markup: 'منافع % (نئی پروڈکٹ)', negStock: 'اسٹاک سے زیادہ فروخت کی اجازت', salesmanClose: 'سیلز مین دن بند کر سکے',
   roles: { OWNER: 'مالک', SALESMAN: 'سیلز مین', STOREKEEPER: 'اسٹور کیپر', ACCOUNTANT: 'اکاؤنٹنٹ' } as Record<string, string>,
   bestSelling: 'سب سے زیادہ بکنے والی', mostProfit: 'سب سے زیادہ منافع', download: 'ڈاؤن لوڈ',
+  returnBtn: 'مال واپس کریں', returnTitle: 'واپسی', returnLeft: (n: string) => `واپس ہو سکتا ہے: ${n}`, refundNow: 'ابھی واپس رقم', refundAuto: 'باقی رقم کھاتے میں ایڈجسٹ ہو گی', walkInFull: 'واک اِن گاہک کو پوری رقم واپس ملتی ہے', returnReason: 'واپسی کی وجہ', returnSave: 'واپسی محفوظ کریں', returnDone: 'واپسی محفوظ ہو گئی', estTotal: 'واپسی کی رقم (اندازہ)',
+  partReturned: 'کچھ مال واپس ہوا', fullReturned: 'سارا مال واپس ہو گیا', returnsList: 'اس بل کی واپسیاں', returnOf: 'اس بل کی واپسی',
+  adjust: 'اسٹاک درست کریں', countedQty: 'گنا ہوا اسٹاک', adjustReason: 'وجہ (جیسے ماہانہ گنتی، ٹوٹ پھوٹ)', adjustSave: 'اسٹاک درست کریں', adjustDone: 'اسٹاک درست ہو گیا', change: 'فرق',
+  importOpening: 'اوپننگ اسٹاک امپورٹ', importHint: 'CSV یا Excel فائل: نام، مقدار، لاگت (ٹیمپلیٹ دیکھیں)۔ پہلے چیک ہو گی، پھر محفوظ', template: 'ٹیمپلیٹ ڈاؤن لوڈ', chooseFile: 'فائل چنیں', checkFile: 'فائل چیک کریں', rowsOk: 'ٹھیک قطاریں', rowsBad: 'غلطی والی قطاریں', newProducts: 'نئی پروڈکٹس', importNow: 'امپورٹ کریں', importDone: 'اوپننگ اسٹاک محفوظ ہو گیا', row: 'قطار', fixAndRetry: 'غلطیاں فائل میں ٹھیک کر کے دوبارہ اپ لوڈ کریں',
   error: 'کچھ غلط ہو گیا', offline: 'انٹرنیٹ نہیں ہے', loading: 'لوڈ ہو رہا ہے',
 };
 
@@ -82,6 +86,10 @@ const en: Dict = {
   addUser: 'New user', role: 'Role', active: 'Active', disabled: 'Disabled', resetPw: 'Reset password', shopName: 'Shop name', address: 'Address', footer: 'Receipt footer', markup: 'Markup % (new products)', negStock: 'Allow selling beyond stock', salesmanClose: 'Salesman may close the day',
   roles: { OWNER: 'Owner', SALESMAN: 'Salesman', STOREKEEPER: 'Storekeeper', ACCOUNTANT: 'Accountant' },
   bestSelling: 'Best selling', mostProfit: 'Most profitable', download: 'Download',
+  returnBtn: 'Return items', returnTitle: 'Return', returnLeft: (n: string) => `can return: ${n}`, refundNow: 'Refund now', refundAuto: 'The rest is adjusted in the ledger', walkInFull: 'A walk-in customer gets the full amount back', returnReason: 'Reason for return', returnSave: 'Save return', returnDone: 'Return saved', estTotal: 'Return amount (estimate)',
+  partReturned: 'Partly returned', fullReturned: 'Fully returned', returnsList: 'Returns against this bill', returnOf: 'Return of',
+  adjust: 'Adjust stock', countedQty: 'Counted stock', adjustReason: 'Reason (e.g. monthly count, breakage)', adjustSave: 'Adjust stock', adjustDone: 'Stock adjusted', change: 'Change',
+  importOpening: 'Opening stock import', importHint: 'CSV or Excel file: name, qty, cost (see the template). It is checked first, then saved', template: 'Download template', chooseFile: 'Choose file', checkFile: 'Check file', rowsOk: 'Rows OK', rowsBad: 'Rows with errors', newProducts: 'New products', importNow: 'Import', importDone: 'Opening stock saved', row: 'Row', fixAndRetry: 'Fix the errors in the file and upload it again',
   error: 'Something went wrong', offline: 'No internet connection', loading: 'Loading',
 };
 

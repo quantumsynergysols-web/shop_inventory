@@ -66,6 +66,8 @@ export interface DocumentLineView {
   stockAfterMilli: QtyMilli;
   stockBeforeMilli: QtyMilli;
   lowStock: boolean;
+  /** Sale/purchase lines: quantity (in the line's unit) already returned */
+  returnedMilli?: QtyMilli;
 }
 
 export interface DocumentView {
@@ -91,6 +93,8 @@ export interface DocumentView {
   createdBy: string;
   postedAt: Date;
   scanId: string | null;
+  returnOfDocId: string | null;
+  returns?: { id: string; docNo: string; totalPaisa: Paisa }[];
 }
 
 const docInclude = {
@@ -100,6 +104,7 @@ const docInclude = {
   payments: true,
   scan: { select: { id: true } },
   voidedBy: { select: { id: true } },
+  returns: { select: { id: true, docNo: true, totalPaisa: true, status: true } },
   lines: { orderBy: { lineNo: 'asc' }, include: { movement: true, product: { select: { name: true, sku: true, minLevel: true } } } },
 } satisfies Prisma.DocumentInclude;
 type DocRow = Prisma.DocumentGetPayload<{ include: typeof docInclude }>;
@@ -148,7 +153,16 @@ function toView(d: DocRow): DocumentView {
     createdBy: d.createdBy.name,
     postedAt: d.postedAt,
     scanId: d.scan?.id ?? null,
+    returnOfDocId: d.returnOfDocId,
   };
+}
+
+/** Quantity already returned per original line number (returns keep the original line numbers). */
+export async function returnedByLine(db: Prisma.TransactionClient | PrismaService, docId: string): Promise<Map<number, QtyMilli>> {
+  const rows = await db.docLine.findMany({ where: { document: { returnOfDocId: docId, status: { not: 'VOIDED' } } }, select: { lineNo: true, qty: true } });
+  const m = new Map<number, QtyMilli>();
+  for (const r of rows) m.set(r.lineNo, (m.get(r.lineNo) ?? 0) + milli(r.qty));
+  return m;
 }
 
 const sum = (xs: readonly { amountPaisa: Paisa }[]) => xs.reduce((s, x) => s + x.amountPaisa, 0);
@@ -160,7 +174,14 @@ export class DocumentsService {
   async get(shopId: string, id: string): Promise<DocumentView> {
     const d = await this.db.document.findFirst({ where: { id, shopId }, include: docInclude });
     if (!d) throw new NotFoundException('Document not found');
-    return toView(d);
+    const view = toView(d);
+    if (d.kind === 'SALE' || d.kind === 'PURCHASE') {
+      // FR-STK-06: how much of each line has already gone back, so the screen offers only the rest
+      const returned = await returnedByLine(this.db, d.id);
+      view.returns = d.returns.filter((r) => r.status !== 'VOIDED').map((r) => ({ id: r.id, docNo: r.docNo, totalPaisa: paisa(r.totalPaisa) }));
+      for (const l of view.lines) l.returnedMilli = returned.get(l.lineNo) ?? 0;
+    }
+    return view;
   }
 
   async list(shopId: string, f: { kind?: DbDocKind; partyId?: string; from?: string; to?: string; limit?: number }): Promise<DocumentView[]> {
@@ -369,6 +390,7 @@ export class DocumentsService {
         const doc = await tx.document.findFirst({ where: { id, shopId }, include: { lines: { include: { movement: true } }, payments: true, ledger: true, voidedBy: true } });
         if (!doc) throw new NotFoundException('Document not found');
         if (doc.kind === 'VOID') throw new BadRequestException('A void cannot be voided');
+        if (doc.kind === 'SALES_RETURN' || doc.kind === 'PURCHASE_RETURN') throw new BadRequestException('A return cannot be voided; record a new sale or purchase instead');
         if (doc.status === 'VOIDED' || doc.voidedBy) throw new ConflictException('Already voided');
         if (doc.status !== 'POSTED') throw new ConflictException('Documents with returns cannot be voided yet');
 

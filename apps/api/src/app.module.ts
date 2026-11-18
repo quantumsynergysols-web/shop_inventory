@@ -10,6 +10,8 @@ import { PrismaAuthStore } from './auth/prisma-auth.store.js';
 import { DomainErrorsFilter } from './common/domain-errors.filter.js';
 import { DocumentsController } from './documents/documents.controller.js';
 import { DocumentsService } from './documents/documents.service.js';
+import { StockDocsController } from './documents/stock-docs.controller.js';
+import { StockDocsService } from './documents/stock-docs.service.js';
 import { PartiesController } from './parties/parties.controller.js';
 import { PartiesService } from './parties/parties.service.js';
 import { ProductsController } from './products/products.controller.js';
@@ -49,6 +51,7 @@ export class AppModule {
       ProductsService,
       PartiesService,
       DocumentsService,
+      StockDocsService,
       ScansService,
       DayService,
       { provide: FILE_STORAGE, useClass: LocalDiskStorage },
@@ -60,7 +63,7 @@ export class AppModule {
     return {
       module: AppModule,
       imports: [JwtModule.register({ secret: config.JWT_SECRET, signOptions: { algorithm: 'HS256' }, verifyOptions: { algorithms: ['HS256'] } })],
-      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, ScansController, DashboardController, DayController, ReportsController, UsersController],
+      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, StockDocsController, ScansController, DashboardController, DayController, ReportsController, UsersController],
       providers,
     };
   }

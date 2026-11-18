@@ -17,7 +17,7 @@ export class DashboardController {
     const [products, stock, todayDocs, pending, recentScans, recentDocs, closing] = await Promise.all([
       this.db.product.count({ where: { shopId, active: true } }),
       this.db.$queryRaw<{ value: bigint | null }[]>`SELECT sum("stockValuePaisa")::bigint AS value FROM "product" WHERE "shopId" = ${shopId}::uuid AND active`,
-      this.db.document.findMany({ where: { shopId, docDate: today, kind: { in: ['SALE', 'PURCHASE'] }, status: { not: 'VOIDED' } }, select: { kind: true, totalPaisa: true, cogsPaisa: true } }),
+      this.db.document.findMany({ where: { shopId, docDate: today, kind: { in: ['SALE', 'PURCHASE', 'SALES_RETURN'] }, status: { not: 'VOIDED' } }, select: { kind: true, totalPaisa: true, cogsPaisa: true } }),
       this.db.scan.count({ where: { shopId, status: { in: ['NEEDS_REVIEW', 'FAILED'] } } }),
       this.db.scan.findMany({ where: { shopId }, orderBy: { createdAt: 'desc' }, take: 8, select: { id: true, type: true, status: true, createdAt: true, pageCount: true, documentId: true } }),
       this.db.document.findMany({ where: { shopId }, orderBy: { postedAt: 'desc' }, take: 8, include: { party: { select: { name: true } }, _count: { select: { lines: true } } } }),
@@ -28,7 +28,7 @@ export class DashboardController {
       SELECT id, name, "onHand"::text AS on_hand, "minLevel"::text AS min_level FROM "product"
       WHERE "shopId" = ${shopId}::uuid AND active AND "onHand" <= "minLevel" ORDER BY ("onHand" - "minLevel") ASC, name LIMIT 50`;
     const sum = (kind: string, f: 'totalPaisa' | 'cogsPaisa') => todayDocs.filter((d) => d.kind === kind).reduce((s, d) => s + paisa(d[f]), 0);
-    const salesToday = sum('SALE', 'totalPaisa');
+    const salesToday = sum('SALE', 'totalPaisa') - sum('SALES_RETURN', 'totalPaisa'); // FR-STK-06: net of returns
     const financials = can(u.role, 'dashboard.view_financials');
     return {
       date: businessDate(),
@@ -38,7 +38,7 @@ export class DashboardController {
       purchasesTodayPaisa: sum('PURCHASE', 'totalPaisa'),
       salesTodayPaisa: salesToday,
       salesTodayCount: todayDocs.filter((d) => d.kind === 'SALE').length,
-      grossProfitTodayPaisa: financials ? salesToday - sum('SALE', 'cogsPaisa') : null,
+      grossProfitTodayPaisa: financials ? salesToday - sum('SALE', 'cogsPaisa') + sum('SALES_RETURN', 'cogsPaisa') : null,
       lowStockCount: low.length,
       lowStock: low.slice(0, 10).map((r) => ({ id: r.id, name: r.name, onHandMilli: milli(r.on_hand), minLevelMilli: milli(r.min_level) })),
       pendingReviews: pending,

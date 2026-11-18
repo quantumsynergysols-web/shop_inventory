@@ -80,5 +80,18 @@ export function client(base: string) {
     if (r.status !== 200) throw new Error(`login ${who} failed: ${JSON.stringify(r.json)}`);
     tokens.set(who, r.json.accessToken);
   }
-  return { call, login };
+  async function upload(path: string, who: string, field: string, bytes: Buffer, filename: string): Promise<Http> {
+    const form = new FormData();
+    form.append(field, new Blob([bytes]), filename);
+    const res = await fetch(base + path, { method: 'POST', headers: { authorization: `Bearer ${tokens.get(who)}` }, body: form });
+    const out = Buffer.from(await res.arrayBuffer());
+    let json: unknown = null;
+    try {
+      json = out.length ? JSON.parse(out.toString('utf8')) : null;
+    } catch {
+      json = out.toString('utf8');
+    }
+    return { status: res.status, json, headers: res.headers, bytes: out };
+  }
+  return { call, login, upload };
 }

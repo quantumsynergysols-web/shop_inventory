@@ -44,6 +44,7 @@ export function More() {
         <div className="card">
           <div className="list">
             {owner && <a className="item" href="#/users"><span className="grow"><b>{t.users}</b></span><Icon name="chev" flip /></a>}
+            {owner && <a className="item" href="#/opening"><span className="grow"><b>{t.importOpening}</b></span><Icon name="chev" flip /></a>}
             {owner && <a className="item" href="#/settings"><span className="grow"><b>{t.settings}</b></span><Icon name="chev" flip /></a>}
             <div className="item">
               <span className="grow"><b>{t.language}</b></span>

@@ -34,7 +34,7 @@ export class DayService {
   async input(shopId: string, ymd: string): Promise<DayInput> {
     const day = dateOnly(ymd);
     const [docs, voids, standalone, expenses, prev] = await Promise.all([
-      this.db.document.findMany({ where: { shopId, docDate: day, kind: { in: ['SALE', 'PURCHASE'] } }, include: { payments: true, voidedBy: { select: { docDate: true } } } }),
+      this.db.document.findMany({ where: { shopId, docDate: day, kind: { in: ['SALE', 'PURCHASE', 'SALES_RETURN', 'PURCHASE_RETURN'] } }, include: { payments: true, voidedBy: { select: { docDate: true } } } }),
       this.db.document.findMany({ where: { shopId, docDate: day, kind: 'VOID' }, include: { payments: true, voidsDoc: true } }),
       this.db.payment.findMany({ where: { shopId, paidOn: day, documentId: null } }),
       this.db.expense.findMany({ where: { shopId, businessDate: day } }),
@@ -57,6 +57,11 @@ export class DayService {
         supplierPayments.push(...v.payments.map((p) => entry(p, -1))); // money came back from the supplier
       }
     }
+    // FR-STK-06: returns made today. Refunds leave (or, from a supplier, come back to) the galla today.
+    for (const r of docs.filter((x) => x.kind === 'SALES_RETURN')) {
+      salesReturns.push({ totalPaisa: paisa(r.totalPaisa), refunds: r.payments.map((p) => entry(p)), cogsReversedPaisa: paisa(r.cogsPaisa) });
+    }
+    for (const r of docs.filter((x) => x.kind === 'PURCHASE_RETURN')) supplierPayments.push(...r.payments.map((p) => entry(p, -1)));
     for (const p of standalone) if (p.direction === 'PAID') supplierPayments.push(entry(p));
     return {
       openingCashPaisa: prev?.countedCashPaisa == null ? 0 : paisa(prev.countedCashPaisa),
@@ -65,7 +70,9 @@ export class DayService {
       expenses: expenses.map((e) => ({ mode: e.paidFrom, amountPaisa: paisa(e.amountPaisa) })),
       customerPayments: standalone.filter((p) => p.direction === 'RECEIVED').map((p) => entry(p)),
       supplierPayments,
-      purchasesPaisa: docs.filter((d) => d.kind === 'PURCHASE' && !voidedSameDay(d)).reduce((s, d) => s + paisa(d.totalPaisa), 0),
+      purchasesPaisa:
+        docs.filter((d) => d.kind === 'PURCHASE' && !voidedSameDay(d)).reduce((s, d) => s + paisa(d.totalPaisa), 0) -
+        docs.filter((d) => d.kind === 'PURCHASE_RETURN').reduce((s, d) => s + paisa(d.totalPaisa), 0),
     };
   }
 
@@ -214,20 +221,25 @@ export class DayService {
     const from = dateOnly(`${ym}-01`);
     const to = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + 1, 1));
     const shopId = user.shopId;
-    const [sales, expenses, items, closings] = await Promise.all([
+    const [sales, returns, expenses, items, closings] = await Promise.all([
       this.db.document.aggregate({ where: { shopId, kind: 'SALE', status: { not: 'VOIDED' }, docDate: { gte: from, lt: to } }, _sum: { totalPaisa: true, cogsPaisa: true }, _count: true }),
+      this.db.document.aggregate({ where: { shopId, kind: 'SALES_RETURN', docDate: { gte: from, lt: to } }, _sum: { totalPaisa: true, cogsPaisa: true } }),
       this.db.$queryRaw<{ head: string; total: bigint }[]>`
         SELECT h.name AS head, sum(e."amountPaisa")::bigint AS total FROM "expense" e JOIN "expense_head" h ON h.id = e."headId"
         WHERE e."shopId" = ${shopId}::uuid AND e."businessDate" >= ${from} AND e."businessDate" < ${to} GROUP BY h.name ORDER BY total DESC`,
       this.db.$queryRaw<{ id: string; name: string; qty: string; revenue: bigint; cogs: bigint }[]>`
-        SELECT p.id, p.name, sum(l."qtyBase")::text AS qty, sum(l."amountPaisa")::bigint AS revenue, sum(-m."valuePaisa")::bigint AS cogs
+        SELECT p.id, p.name,
+          sum(CASE WHEN d.kind = 'SALE' THEN l."qtyBase" ELSE -l."qtyBase" END)::text AS qty,
+          sum(CASE WHEN d.kind = 'SALE' THEN l."amountPaisa" ELSE -l."amountPaisa" END)::bigint AS revenue,
+          sum(-m."valuePaisa")::bigint AS cogs
         FROM "doc_line" l JOIN "document" d ON d.id = l."documentId" JOIN "stock_movement" m ON m."docLineId" = l.id JOIN "product" p ON p.id = l."productId"
-        WHERE d."shopId" = ${shopId}::uuid AND d.kind = 'SALE' AND d.status <> 'VOIDED' AND d."docDate" >= ${from} AND d."docDate" < ${to}
+        WHERE d."shopId" = ${shopId}::uuid AND d.kind IN ('SALE', 'SALES_RETURN') AND d.status <> 'VOIDED' AND d."docDate" >= ${from} AND d."docDate" < ${to}
         GROUP BY p.id, p.name`,
       this.db.dayClosing.findMany({ where: { shopId, businessDate: { gte: from, lt: to } }, orderBy: { businessDate: 'asc' } }),
     ]);
-    const sale = paisa(sales._sum.totalPaisa);
-    const cogs = paisa(sales._sum.cogsPaisa);
+    // FR-STK-06: returns reduce the month's sale and its cost
+    const sale = paisa(sales._sum.totalPaisa) - paisa(returns._sum.totalPaisa);
+    const cogs = paisa(sales._sum.cogsPaisa) - paisa(returns._sum.cogsPaisa);
     const expByHead = expenses.map((e) => ({ head: e.head, totalPaisa: paisa(e.total) }));
     const expTotal = expByHead.reduce((s, e) => s + e.totalPaisa, 0);
     const itemRows = items.map((i) => ({ productId: i.id, name: i.name, qtyMilli: milli(i.qty), revenuePaisa: paisa(i.revenue), cogsPaisa: paisa(i.cogs), profitPaisa: paisa(i.revenue) - paisa(i.cogs) }));

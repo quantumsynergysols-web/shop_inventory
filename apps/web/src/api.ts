@@ -143,3 +143,10 @@ export async function download(path: string, filename: string): Promise<void> {
 }
 
 export const newKey = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+
+/** multipart upload of one file (opening-stock import) */
+export async function uploadFile<T = any>(path: string, field: string, file: File): Promise<T> {
+  const form = new FormData();
+  form.append(field, file, file.name);
+  return (await request(path, { method: 'POST', body: form })).json() as Promise<T>;
+}

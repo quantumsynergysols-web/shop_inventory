@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { download, get, patch, post } from '../api';
+import { download, get, newKey, patch, post, uploadFile } from '../api';
 import { date, milliInput, paisaInput, qty, rs, toMilli, toPaisa } from '../format';
 import { useT } from '../i18n';
 import { ErrorBox, Icon, Loading, Nav, Top, go, useApp, useLoad } from '../ui';
@@ -122,6 +122,7 @@ export function ProductView({ id }: { id: string }) {
           </div>
           {owner && <button className="cta" disabled={!form.name.trim()} onClick={save}>{t.save}</button>}
         </div>
+        {p && owner && <AdjustCard p={p} onDone={reload} />}
         {history.length > 0 && (
           <div className="card">
             <h2 className="h3">{t.history}</h2>
@@ -133,6 +134,129 @@ export function ProductView({ id }: { id: string }) {
               </tbody>
             </table>
           </div>
+        )}
+      </main>
+    </>
+  );
+}
+
+/** FR-STK-07: owner types the counted stock and a reason; the difference posts as an adjustment. */
+function AdjustCard({ p, onDone }: { p: any; onDone: () => void }) {
+  const { t } = useT();
+  const { toast } = useApp();
+  const [counted, setCounted] = useState('');
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const m = toMilli(counted);
+  const diff = m == null ? null : m - p.onHandMilli;
+  async function save() {
+    setBusy(true);
+    try {
+      await post('/adjustments', { reason, lines: [{ productId: p.id, countedMilli: m }] }, { 'idempotency-key': newKey() });
+      toast(t.adjustDone);
+      setCounted('');
+      setReason('');
+      onDone();
+    } catch (e) {
+      toast((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="card" style={{ display: 'grid', gap: 10 }}>
+      <h2 className="h3">{t.adjust}</h2>
+      <div className="fields">
+        <label className="f"><span>{t.countedQty} ({p.baseUnit})</span><input className="in num" inputMode="decimal" value={counted} onChange={(e) => setCounted(e.target.value)} placeholder={qty(p.onHandMilli)} /></label>
+        <div className="f"><span>{t.change}</span><b className={`n ${diff != null && diff < 0 ? 'red' : diff ? 'green' : ''}`}>{diff == null ? '—' : `${diff > 0 ? '+' : diff < 0 ? '−' : ''}${qty(Math.abs(diff))}`}</b></div>
+      </div>
+      <input className="in" placeholder={t.adjustReason} value={reason} onChange={(e) => setReason(e.target.value)} />
+      <button className="cta sec" disabled={busy || !diff || reason.trim().length < 3} onClick={save}>{t.adjustSave}</button>
+    </div>
+  );
+}
+
+/** FR-STK-08: owner uploads CSV/Excel, sees every row checked, and imports only when all rows are fine. */
+export function OpeningImport() {
+  const { t } = useT();
+  const { toast } = useApp();
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
+  async function check(f: File) {
+    setBusy(true);
+    setPreview(null);
+    try {
+      setPreview(await uploadFile('/opening-stock?dryRun=1', 'file', f));
+    } catch (e) {
+      toast((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function doImport() {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const r = await uploadFile('/opening-stock', 'file', file);
+      toast(t.importDone);
+      go(r.document ? `/doc/${r.document.id}` : '/stock');
+    } catch (e: any) {
+      if (e.body?.preview) setPreview(e.body.preview);
+      toast(e.message);
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <Top title={t.importOpening} backTo="/more" />
+      <main className="body">
+        <div className="card" style={{ display: 'grid', gap: 10 }}>
+          <div className="label">{t.importHint}</div>
+          <button className="link" onClick={() => download('/opening-stock/template.csv', 'opening-stock-template.csv')}>{t.template}</button>
+          <label className="cta sec" style={{ cursor: 'pointer' }}>
+            <Icon name="sheet" /> {file ? <span className="ltr">{file.name}</span> : t.chooseFile}
+            <input
+              type="file"
+              hidden
+              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                setFile(f);
+                if (f) check(f);
+                e.target.value = ''; // so choosing the corrected file with the same name works again
+              }}
+            />
+          </label>
+          {busy && <div className="row muted"><div className="spin" /> {t.loading}</div>}
+        </div>
+        {preview && (
+          <>
+            <div className="card">
+              <div className="rw"><span>{t.rowsOk}</span><span className="n green">{preview.okRows}</span></div>
+              <div className="rw"><span>{t.rowsBad}</span><span className={`n ${preview.errorRows ? 'red' : ''}`}>{preview.errorRows}</span></div>
+              <div className="rw"><span>{t.newProducts}</span><span className="n">{preview.newProducts}</span></div>
+              <div className="rw tot"><span>{t.value}</span><span className="n">{rs(preview.stockValuePaisa)}</span></div>
+            </div>
+            {preview.errorRows > 0 && <div className="banner bad">{t.fixAndRetry}</div>}
+            <div className="card" style={{ overflowX: 'auto' }}>
+              <table className="t ltr">
+                <thead><tr><th>{t.row}</th><th>{t.name}</th><th>{t.qty}</th><th>{t.purchasePrice}</th><th></th></tr></thead>
+                <tbody>
+                  {preview.rows.map((r: any) => (
+                    <tr key={r.row}>
+                      <td className="n">{r.row}</td>
+                      <td>{r.name}{r.errors.length > 0 && <div className="red" style={{ fontSize: 13 }}>{r.errors.join('; ')}</div>}</td>
+                      <td className="n">{qty(r.qtyMilli)} {r.unit}</td>
+                      <td className="n">{rs(r.costPaisa)}</td>
+                      <td>{r.errors.length ? <span className="tag t-bad">✕</span> : <span className={`tag ${r.status === 'new' ? 't-new' : 't-ok'}`}>{r.status === 'new' ? t.newP : t.match}</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button className="cta" disabled={busy || preview.errorRows > 0 || !preview.rows.length} onClick={doImport}>{t.importNow}</button>
+          </>
         )}
       </main>
     </>
