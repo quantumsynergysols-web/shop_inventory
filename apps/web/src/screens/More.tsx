@@ -41,6 +41,7 @@ export function More() {
             </div>
           </div>
         )}
+        {owner && <DataSafety />}
         <div className="card">
           <div className="list">
             {owner && <a className="item" href="#/users"><span className="grow"><b>{t.users}</b></span><Icon name="chev" flip /></a>}
@@ -57,6 +58,38 @@ export function More() {
       </main>
       <Nav current="more" />
     </>
+  );
+}
+
+/** FR-SET-05: owner downloads everything; shows when the automatic backup last ran. */
+function DataSafety() {
+  const { t } = useT();
+  const { toast } = useApp();
+  const { data: b } = useLoad(() => get('/backup/status'), []);
+  const [busy, setBusy] = useState(false);
+  const when = (d: string) => new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  async function exportAll() {
+    setBusy(true);
+    try {
+      await download('/export', `shop-export-${new Date().toISOString().slice(0, 10)}.zip`);
+    } catch (e) {
+      toast((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="card" style={{ display: 'grid', gap: 10 }}>
+      <h2 className="h3">{t.dataSafety}</h2>
+      <button className="cta sec" disabled={busy} onClick={exportAll}><Icon name="sheet" /> {busy ? t.exporting : t.fullExport}</button>
+      <div className="label">{t.exportHint}</div>
+      {b && (
+        <div className="label">
+          {!b.enabled ? t.backupOff : b.lastError ? <span className="red">{t.backupFailed}</span> : b.lastAt ? <>{t.backupLast}: <bdi className="n">{when(b.lastAt)}</bdi></> : t.backupNone}
+          {b.enabled && b.nextAt && <> · {t.backupNext}: <bdi className="n">{when(b.nextAt)}</bdi></>}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -34,7 +34,8 @@ export type Action =
   | 'report.view'
   | 'report.export'
   | 'audit.view'
-  | 'settings.manage';
+  | 'settings.manage'
+  | 'data.export';
 
 const ALL: readonly Role[] = ['OWNER', 'SALESMAN', 'STOREKEEPER', 'ACCOUNTANT'];
 
@@ -69,6 +70,8 @@ const MATRIX: Record<Action, readonly Role[]> = {
   'report.export': ['OWNER', 'ACCOUNTANT'],
   'audit.view': ['OWNER', 'ACCOUNTANT'],
   'settings.manage': ['OWNER'],
+  // FR-SET-05: full export of the shop's data and photos
+  'data.export': ['OWNER'],
 };
 
 export interface ShopRules {

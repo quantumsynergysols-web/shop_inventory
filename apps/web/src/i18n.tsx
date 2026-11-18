@@ -43,6 +43,7 @@ const ur = {
   partReturned: 'کچھ مال واپس ہوا', fullReturned: 'سارا مال واپس ہو گیا', returnsList: 'اس بل کی واپسیاں', returnOf: 'اس بل کی واپسی',
   adjust: 'اسٹاک درست کریں', countedQty: 'گنا ہوا اسٹاک', adjustReason: 'وجہ (جیسے ماہانہ گنتی، ٹوٹ پھوٹ)', adjustSave: 'اسٹاک درست کریں', adjustDone: 'اسٹاک درست ہو گیا', change: 'فرق',
   importOpening: 'اوپننگ اسٹاک امپورٹ', importHint: 'CSV یا Excel فائل: نام، مقدار، لاگت (ٹیمپلیٹ دیکھیں)۔ پہلے چیک ہو گی، پھر محفوظ', template: 'ٹیمپلیٹ ڈاؤن لوڈ', chooseFile: 'فائل چنیں', checkFile: 'فائل چیک کریں', rowsOk: 'ٹھیک قطاریں', rowsBad: 'غلطی والی قطاریں', newProducts: 'نئی پروڈکٹس', importNow: 'امپورٹ کریں', importDone: 'اوپننگ اسٹاک محفوظ ہو گیا', row: 'قطار', fixAndRetry: 'غلطیاں فائل میں ٹھیک کر کے دوبارہ اپ لوڈ کریں',
+  dataSafety: 'ڈیٹا کی حفاظت', fullExport: 'مکمل ڈیٹا ڈاؤن لوڈ (Excel + تصویریں)', exportHint: 'پورا ریکارڈ اور بلوں کی تمام تصویریں ایک zip فائل میں', exporting: 'فائل بن رہی ہے…', backupLast: 'آخری خودکار بیک اپ', backupNone: 'ابھی کوئی بیک اپ نہیں بنا', backupFailed: 'آخری بیک اپ ناکام ہوا، سرور چیک کریں', backupOff: 'خودکار بیک اپ بند ہے', backupNext: 'اگلا بیک اپ',
   error: 'کچھ غلط ہو گیا', offline: 'انٹرنیٹ نہیں ہے', loading: 'لوڈ ہو رہا ہے',
 };
 
@@ -90,6 +91,7 @@ const en: Dict = {
   partReturned: 'Partly returned', fullReturned: 'Fully returned', returnsList: 'Returns against this bill', returnOf: 'Return of',
   adjust: 'Adjust stock', countedQty: 'Counted stock', adjustReason: 'Reason (e.g. monthly count, breakage)', adjustSave: 'Adjust stock', adjustDone: 'Stock adjusted', change: 'Change',
   importOpening: 'Opening stock import', importHint: 'CSV or Excel file: name, qty, cost (see the template). It is checked first, then saved', template: 'Download template', chooseFile: 'Choose file', checkFile: 'Check file', rowsOk: 'Rows OK', rowsBad: 'Rows with errors', newProducts: 'New products', importNow: 'Import', importDone: 'Opening stock saved', row: 'Row', fixAndRetry: 'Fix the errors in the file and upload it again',
+  dataSafety: 'Data safety', fullExport: 'Download all data (Excel + photos)', exportHint: 'Every record and every bill photo in one zip file', exporting: 'Preparing the file…', backupLast: 'Last automatic backup', backupNone: 'No backup has run yet', backupFailed: 'The last backup failed; check the server', backupOff: 'Automatic backup is off', backupNext: 'Next backup',
   error: 'Something went wrong', offline: 'No internet connection', loading: 'Loading',
 };
 

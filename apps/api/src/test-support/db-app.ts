@@ -28,6 +28,11 @@ export function testConfig(url: string): AppConfig {
     AI_PROVIDER: 'demo',
     DEMO_FIXTURES_DIR: join(tmpdir(), 'erp-test-no-fixtures'),
     WEB_DIST: join(tmpdir(), 'erp-test-no-web'),
+    BACKUP_ENABLED: false,
+    BACKUP_DIR: join(tmpdir(), 'erp-test-backups'),
+    BACKUP_KEEP: 3,
+    BACKUP_HOUR: 2,
+    PG_DUMP: '',
   };
 }
 
@@ -80,9 +85,11 @@ export function client(base: string) {
     if (r.status !== 200) throw new Error(`login ${who} failed: ${JSON.stringify(r.json)}`);
     tokens.set(who, r.json.accessToken);
   }
-  async function upload(path: string, who: string, field: string, bytes: Buffer, filename: string): Promise<Http> {
+  async function upload(path: string, who: string, field: string, bytes: Buffer, filename: string, fields: Record<string, string> = {}): Promise<Http> {
     const form = new FormData();
-    form.append(field, new Blob([bytes]), filename);
+    for (const [k, v] of Object.entries(fields)) form.append(k, v);
+    const type = ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', csv: 'text/csv' } as Record<string, string>)[filename.split('.').pop()!.toLowerCase()] ?? '';
+    form.append(field, new Blob([bytes], { type }), filename);
     const res = await fetch(base + path, { method: 'POST', headers: { authorization: `Bearer ${tokens.get(who)}` }, body: form });
     const out = Buffer.from(await res.arrayBuffer());
     let json: unknown = null;

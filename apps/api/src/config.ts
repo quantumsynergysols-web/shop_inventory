@@ -19,6 +19,14 @@ const schema = z.object({
   DEMO_FIXTURES_DIR: z.string().default('demo-fixtures'),
   /** Built web app (apps/web/dist) served at / when present, so one port serves the PWA and the API */
   WEB_DIST: z.string().default('../web/dist'),
+  /** FR-SET-05: daily pg_dump backup (all shops) */
+  BACKUP_ENABLED: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
+  BACKUP_DIR: z.string().default('backups'),
+  BACKUP_KEEP: z.coerce.number().int().min(1).max(365).default(14),
+  /** Hour of the day, Pakistan time */
+  BACKUP_HOUR: z.coerce.number().int().min(0).max(23).default(2),
+  /** Path to pg_dump; empty = PATH, or the PostgreSQL install folder on Windows */
+  PG_DUMP: z.string().default(''),
 });
 
 export type AppConfig = z.infer<typeof schema>;

@@ -15,3 +15,5 @@ apps/api/storage/
 # demo videos are large; they are shared separately
 docs/demo/*.webm
 docs/demo/*.mp4
+
+apps/api/backups/

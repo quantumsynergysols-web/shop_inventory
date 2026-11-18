@@ -21,6 +21,11 @@ const config: AppConfig = {
   AI_PROVIDER: 'demo',
   DEMO_FIXTURES_DIR: join(tmpdir(), 'erp-test-no-fixtures'),
     WEB_DIST: join(tmpdir(), 'erp-test-no-web'),
+    BACKUP_ENABLED: false,
+    BACKUP_DIR: join(tmpdir(), 'erp-test-backups'),
+    BACKUP_KEEP: 3,
+    BACKUP_HOUR: 2,
+    PG_DUMP: '',
 };
 
 let app: INestApplication;

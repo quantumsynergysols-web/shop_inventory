@@ -1,5 +1,5 @@
 import { Module, type DynamicModule, type Provider } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_CONFIG, type AppConfig } from './config.js';
 import { AuthController } from './auth/auth.controller.js';
@@ -27,7 +27,11 @@ import { ReportsController } from './reports/reports.controller.js';
 import { UsersController } from './users/users.controller.js';
 import { HealthController } from './health/health.controller.js';
 import { HEALTH_PROBE, type HealthProbe } from './health/health.probe.js';
+import { BackupController } from './backup/backup.controller.js';
+import { BackupService } from './backup/backup.service.js';
+import { ExportService } from './backup/export.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
+import { ShopContextInterceptor } from './prisma/shop-context.js';
 
 export interface AppOverrides {
   /** Replace the database-backed stores, e.g. with in-memory ones in tests */
@@ -52,6 +56,8 @@ export class AppModule {
       PartiesService,
       DocumentsService,
       StockDocsService,
+      ExportService,
+      BackupService,
       ScansService,
       DayService,
       { provide: FILE_STORAGE, useClass: LocalDiskStorage },
@@ -59,11 +65,12 @@ export class AppModule {
       { provide: AI_PROVIDER, useExisting: DemoAiProvider },
       { provide: APP_GUARD, useClass: AuthGuard },
       { provide: APP_FILTER, useClass: DomainErrorsFilter },
+      { provide: APP_INTERCEPTOR, useClass: ShopContextInterceptor },
     ];
     return {
       module: AppModule,
       imports: [JwtModule.register({ secret: config.JWT_SECRET, signOptions: { algorithm: 'HS256' }, verifyOptions: { algorithms: ['HS256'] } })],
-      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, StockDocsController, ScansController, DashboardController, DayController, ReportsController, UsersController],
+      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, StockDocsController, ScansController, DashboardController, DayController, ReportsController, UsersController, BackupController],
       providers,
     };
   }
