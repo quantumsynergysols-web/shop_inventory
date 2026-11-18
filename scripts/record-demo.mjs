@@ -1,7 +1,8 @@
 // Records the product demo video (phase 5).
 //
 //   npm run build            (domain, API and web app)
-//   node scripts/record-demo.mjs
+//   node scripts/record-demo.mjs          Urdu UI, Urdu narration  -> docs/demo/shop-erp-demo.mp4
+//   node scripts/record-demo.mjs --en     English UI, English narration -> docs/demo/shop-erp-demo-en.mp4
 //
 // What it does:
 // 1. Creates/clears a separate database "<DATABASE_URL db>_demo" and fills it with a sample shop.
@@ -22,8 +23,16 @@ import { hash } from '@node-rs/argon2';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const api = join(root, 'apps/api');
 const outDir = join(root, 'docs/demo');
-// Urdu narration, one clip per step (ElevenLabs voice "Amjid" via FameSpeak): docs/demo/voice/step-NN.mp3
-const voiceDir = join(outDir, 'voice');
+const EN = process.argv.includes('--en');
+// One narration clip per step: Urdu (ElevenLabs "Amjid") in docs/demo/voice, English (ElevenLabs "Peter") in docs/demo/voice-en
+const voiceDir = join(outDir, EN ? 'voice-en' : 'voice');
+const OUT_NAME = EN ? 'shop-erp-demo-en.mp4' : 'shop-erp-demo.mp4';
+// Button and label text the script looks for, as the app shows it in each language (apps/web/src/i18n.tsx).
+const UI = EN
+  ? { signIn: 'Sign in', upload: 'Read the bill', review: 'Review bill', addLine: 'Add line', written: 'Written on paper', searchProduct: 'Search product', createProduct: 'Create new product', name: 'Name', purchasePrice: 'Purchase price', qty: 'Quantity', rate: 'Rate', ok: 'Done', confirmIn: 'Save purchase (stock in)', doneIn: 'Purchase saved', home: 'Go home', received: 'Amount received', confirmOut: 'Save sale & create receipt', doneOut: 'Sale saved', addExpOpen: '+ Add expense', addExp: 'Add expense', expected: 'Expected cash', closeBtn: 'Close the day' }
+  : { signIn: 'داخل ہوں', upload: 'بل پڑھیں', review: 'بل چیک کریں', addLine: 'لائن شامل کریں', written: 'کاغذ پر لکھا', searchProduct: 'پروڈکٹ تلاش کریں', createProduct: 'نئی پروڈکٹ بنائیں', name: 'نام', purchasePrice: 'قیمتِ خرید', qty: 'مقدار', rate: 'ریٹ', ok: 'ٹھیک ہے', confirmIn: 'خریداری محفوظ کریں (اسٹاک اِن)', doneIn: 'خریداری محفوظ ہو گئی', home: 'ہوم پر جائیں', received: 'وصول رقم', confirmOut: 'فروخت محفوظ کریں اور رسید بنائیں', doneOut: 'فروخت محفوظ ہو گئی', addExpOpen: '+ خرچ درج کریں', addExp: 'خرچ درج کریں', expected: 'متوقع کیش', closeBtn: 'دن بند کریں' };
+// Caption headlines for the English run, in step order (the Urdu run uses the Roman Urdu titles in the story below).
+const EN_TITLES = ['Urdu first, English too', 'Home: the day at a glance', 'Supplier bill: take a photo', 'The AI reads the bill', 'Caught: row 5 is missing', 'A photo crop beside every line', 'Add the missed row', 'Lines now match the bill total', 'Stock went up', 'Now a sale bill', 'Short stock blocks the sale', 'Customer matched; credit too', 'Receipt: print or WhatsApp', 'Day-end closing', 'Count the cash drawer', 'Day closed; opening cash ready', 'Ledger: who owes whom', 'Stock list, low stock in red', 'Urdu too', 'Thank you'];
 const clip = (n) => join(voiceDir, `step-${String(n).padStart(2, '0')}.mp3`);
 const clipSeconds = (n) => (existsSync(clip(n)) ? Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', clip(n)]).toString().trim()) : 0);
 const PORT = 3100;
@@ -203,7 +212,7 @@ async function record() {
       document.getElementById('title').textContent = t;
       document.getElementById('en').textContent = e;
       document.getElementById('req').textContent = r;
-    }, [`Step ${n}`, title, en, req]);
+    }, [`Step ${n}`, EN ? (EN_TITLES[n - 1] ?? title) : title, en, req]);
     await page.waitForTimeout(ms);
   };
   const tap = async (loc, pause = 700) => {
@@ -241,9 +250,10 @@ async function record() {
   await page.evaluate((u) => (document.getElementById('phone').src = u), `${BASE}/`);
   await frame.locator('input[autocomplete=username]').waitFor();
   await say('Urdu pehle, English bhi', 'The app opens in Urdu (Nastaliq). Owner logs in with phone and password.', 'FR-AUTH-01 · C-6');
+  if (EN) await tap(frame.getByRole('button', { name: 'EN' }), 1200);
   await type(frame.locator('input[autocomplete=username]'), OWNER.phone);
   await type(frame.locator('input[type=password]'), OWNER.password);
-  await tap(frame.getByRole('button', { name: 'داخل ہوں' }), 1800);
+  await tap(frame.getByRole('button', { name: UI.signIn }), 1800);
 
   // 2. Home
   await frame.getByText('Haji Sanitary & Electric').waitFor();
@@ -256,74 +266,74 @@ async function record() {
   await tap(frame.locator('a.bigbtn.in'), 900);
   await frame.locator('input[type=file]').setInputFiles(join(api, 'demo-fixtures/purchase-bill.png'));
   await page.waitForTimeout(1500);
-  await tap(frame.getByRole('button', { name: 'بل پڑھیں' }), 600);
+  await tap(frame.getByRole('button', { name: UI.upload }), 600);
   await say('AI bill parhta hai', 'Each page is read; rows, quantities, rates and totals are checked.', 'FR-AI-01..06', 1400, { overlap: true });
-  await frame.getByText('بل چیک کریں').first().waitFor({ timeout: 20000 });
+  await frame.getByText(UI.review).first().waitFor({ timeout: 20000 });
   await page.waitForTimeout(1200);
   await say('Ghalti pakri gayi: row 5 gum hai', 'Serial 5 is missing from the reading and the total does not match, so the app warns instead of trusting the AI.', 'FR-AI-12/13 · NFR-ACC-02', 3600);
   await say('Har line ke saath photo ka tukda', 'Each row shows its crop from the photo. Supplier was matched from the name on the bill.', 'FR-REV-01/06/14 · FR-PTY-04', 3000);
   await scroll(330, 2200);
   await say('Gum row khud shamil karein', 'Add the missed row: type it, create the new product, set qty and rate.', 'FR-REV-02/10/15', 1500, { overlap: true });
-  await tap(frame.getByRole('button', { name: 'لائن شامل کریں' }), 900);
-  await type(frame.getByLabel('کاغذ پر لکھا'), 'Dinner set 24pc');
-  await type(frame.getByPlaceholder('پروڈکٹ تلاش کریں'), 'dinner set');
+  await tap(frame.getByRole('button', { name: UI.addLine }), 900);
+  await type(frame.getByLabel(UI.written), 'Dinner set 24pc');
+  await type(frame.getByPlaceholder(UI.searchProduct), 'dinner set');
   await page.waitForTimeout(900);
-  await tap(frame.locator('.sheet button.choice', { hasText: 'نئی پروڈکٹ بنائیں' }), 700);
-  await type(frame.locator('.sheet .card').getByLabel('نام'), 'Dinner Set 24 pcs');
-  await type(frame.locator('.sheet .card').getByLabel('قیمتِ خرید'), '7500');
-  await tap(frame.locator('.sheet .card button.cta', { hasText: 'نئی پروڈکٹ بنائیں' }), 1200);
-  await type(frame.locator('.sheet').getByLabel('مقدار'), '6');
-  await type(frame.locator('.sheet').getByLabel('ریٹ'), '7500');
+  await tap(frame.locator('.sheet button.choice', { hasText: UI.createProduct }), 700);
+  await type(frame.locator('.sheet .card').getByLabel(UI.name), 'Dinner Set 24 pcs');
+  await type(frame.locator('.sheet .card').getByLabel(UI.purchasePrice), '7500');
+  await tap(frame.locator('.sheet .card button.cta', { hasText: UI.createProduct }), 1200);
+  await type(frame.locator('.sheet').getByLabel(UI.qty), '6');
+  await type(frame.locator('.sheet').getByLabel(UI.rate), '7500');
   await page.waitForTimeout(600);
-  await tap(frame.locator('.sheet').getByRole('button', { name: 'ٹھیک ہے' }), 1600);
+  await tap(frame.locator('.sheet').getByRole('button', { name: UI.ok }), 1600);
   await scroll(900, 1400);
   await say('Ab jod bill ke total ke barabar', 'Line total now equals the bill total. Confirm moves the stock in one transaction.', 'FR-STK-01 · BR-2', 2600);
-  await tap(frame.getByRole('button', { name: 'خریداری محفوظ کریں (اسٹاک اِن)' }), 2200);
-  await frame.getByText('خریداری محفوظ ہو گئی').waitFor();
+  await tap(frame.getByRole('button', { name: UI.confirmIn }), 2200);
+  await frame.getByText(UI.doneIn).waitFor();
   await say('Stock barh gaya', 'Stock before → after for every item; purchase prices and the supplier balance are updated.', 'FR-STK-02/03 · FR-REV-09', 3400);
   await scroll(400, 1500);
 
   // 4. Sale scan
-  await tap(frame.getByRole('button', { name: 'ہوم پر جائیں' }), 1200);
+  await tap(frame.getByRole('button', { name: UI.home }), 1200);
   await say('Ab sale ka bill', 'Sale (Stock OUT): photo of the shop’s handwritten sale bill.', 'UC-02', 1600, { overlap: true });
   await tap(frame.locator('a.bigbtn.out'), 900);
   await frame.locator('input[type=file]').setInputFiles(join(api, 'demo-fixtures/sale-bill.png'));
   await page.waitForTimeout(1300);
-  await tap(frame.getByRole('button', { name: 'بل پڑھیں' }), 600);
-  await frame.getByText('بل چیک کریں').first().waitFor({ timeout: 20000 });
+  await tap(frame.getByRole('button', { name: UI.upload }), 600);
+  await frame.getByText(UI.review).first().waitFor({ timeout: 20000 });
   await page.waitForTimeout(1000);
   await say('Stock kam hai: sale ruk gayi', 'The bill asks for 60 Tee joints but only 45 are in stock, so Confirm is blocked.', 'FR-REV-07', 3400, { overlap: true });
   await tap(frame.locator('.ln', { hasText: 'Tee Joint' }), 900);
-  await type(frame.locator('.sheet').getByLabel('مقدار'), '45');
-  await tap(frame.locator('.sheet').getByRole('button', { name: 'ٹھیک ہے' }), 1500);
+  await type(frame.locator('.sheet').getByLabel(UI.qty), '45');
+  await tap(frame.locator('.sheet').getByRole('button', { name: UI.ok }), 1500);
   await say('Customer photo se mila, udhaar bhi', 'Rana Builders pays Rs 30,000 now; the rest goes to his udhaar.', 'FR-REV-12 · BR-7', 1800, { overlap: true });
   await scroll(1400, 1000);
-  await type(frame.getByLabel('وصول رقم'), '30000');
+  await type(frame.getByLabel(UI.received), '30000');
   await page.waitForTimeout(1200);
-  await tap(frame.getByRole('button', { name: 'فروخت محفوظ کریں اور رسید بنائیں' }), 2200);
-  await frame.getByText('فروخت محفوظ ہو گئی').waitFor();
+  await tap(frame.getByRole('button', { name: UI.confirmOut }), 2200);
+  await frame.getByText(UI.doneOut).waitFor();
   await say('Rasid tayyar: print ya WhatsApp', 'Remaining stock and low-stock warnings, then the receipt for thermal print or WhatsApp.', 'FR-RCP-01..07 · FR-STK-04', 3000);
   await scroll(500, 1800);
   await scroll(500, 2600);
 
   // 5. Day closing
-  await tap(frame.getByRole('button', { name: 'ہوم پر جائیں' }), 1200);
+  await tap(frame.getByRole('button', { name: UI.home }), 1200);
   await say('Din band karna', 'Day-end closing: sales by cash, bank and udhaar, profit, expenses and the galla count.', 'SRS §3.10a · BR-8/9', 1600, { overlap: true });
   await tap(frame.locator('a[href="#/day"]'), 1600);
   await scroll(350, 1800);
-  await tap(frame.getByRole('button', { name: '+ خرچ درج کریں' }), 800);
+  await tap(frame.getByRole('button', { name: UI.addExpOpen }), 800);
   await tap(frame.locator('.sheet .chips button', { hasText: 'Tea / food' }), 400);
   await type(frame.locator('.sheet input.cashin'), '450');
-  await tap(frame.locator('.sheet').getByRole('button', { name: 'خرچ درج کریں' }), 1500);
+  await tap(frame.locator('.sheet').getByRole('button', { name: UI.addExp, exact: true }), 1500);
   await scroll(900, 1200);
-  const expected = await appFrame().evaluate(() => {
-    const row = [...document.querySelectorAll('.rw.tot')].find((r) => r.textContent.includes('متوقع کیش'));
+  const expected = await appFrame().evaluate((label) => {
+    const row = [...document.querySelectorAll('.rw.tot')].find((r) => r.textContent.includes(label));
     return Number(row.querySelector('.n').textContent.replace(/[^0-9.]/g, ''));
-  });
+  }, UI.expected);
   await say('Galla gin kar likhein', `Expected cash is Rs ${expected.toLocaleString('en-US')}. The owner counts Rs 200 less.`, 'FR-CLS-03/04/06', 1600, { overlap: true });
   await type(frame.locator('#counted'), String(expected - 200));
   await page.waitForTimeout(1500);
-  await tap(frame.getByRole('button', { name: 'دن بند کریں' }), 1800);
+  await tap(frame.getByRole('button', { name: UI.closeBtn }), 1800);
   await say('Din band, kal ka opening tayyar', 'Counted cash becomes tomorrow’s opening cash; the closed day is locked.', 'FR-CLS-04/05 · BR-10', 3000);
 
   // 6. Ledger and stock
@@ -335,8 +345,8 @@ async function record() {
 
   // 7. English
   await tap(frame.locator('a[href="#/home"]'), 1200);
-  await tap(frame.getByRole('button', { name: 'EN' }), 1600);
-  await say('English bhi', 'One tap switches the whole app to English.', 'NFR-USE-02', 3200);
+  await tap(frame.getByRole('button', { name: EN ? 'اردو' : 'EN' }), 1600);
+  await say('English bhi', EN ? 'One tap switches the whole app back to Urdu (Nastaliq, right to left).' : 'One tap switches the whole app to English.', 'NFR-USE-02 · C-6', 3200);
   await say('Shukriya', 'Shop Inventory ERP – Photo Scan · built to SRS v1.1 · github.com/quantumsynergysols-web/shop_inventory', '', 3500);
 
   await page.waitForTimeout(500);
@@ -363,7 +373,7 @@ try {
 } finally {
   server.kill();
 }
-const mp4 = join(outDir, 'shop-erp-demo.mp4');
+const mp4 = join(outDir, OUT_NAME);
 const args = ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', rec.listFile];
 for (const c of rec.cues) args.push('-i', c.file);
 if (rec.cues.length) {

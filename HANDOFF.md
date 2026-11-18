@@ -39,7 +39,7 @@ Last updated: 17 Nov 2026 (end of phase 5; status report: https://claude.ai/arti
 | 3 | (7143e75) Dashboard, day closing + expenses (use `summarizeDay`; exclude voided sales and their voids), reports CSV/XLSX, users module (FR-AUTH-04); shop isolation tested through the API | done (row-level security moved to hardening) |
 | 4 | (eda8e4b) Web app: React PWA, Urdu/English, prototype v0.2 design, all screens | done |
 | H | Hardening: row-level security (NFR-SEC-02), pg-boss queue for scans, perceptual photo hash, expense receipt photo, returns/adjustments/opening-stock UI, AI settings screen (FR-SET-02) | – |
-| 5 | (cc9d7b1) Video demo: `npm run demo:record` → `docs/demo/shop-erp-demo.mp4` (3:49, 1280×720, Urdu narration by ElevenLabs "Amjid", git-ignored) | done |
+| 5 | (cc9d7b1) Video demo: `npm run demo:record` → `docs/demo/shop-erp-demo.mp4` (3:49, Urdu, ElevenLabs "Amjid"); `npm run demo:record:en` → `docs/demo/shop-erp-demo-en.mp4` (3:23, English UI and narration, ElevenLabs "Peter"); 1280×720, git-ignored | done |
 | 6 | Real AI adapters (OpenAI/Gemini, FR-AI-14/15, NFR-ACC-01 pilot on 50+ real bills) once a key is available; then hardening (H) | next |
 
 Phase 4 (web app, `apps/web`):
