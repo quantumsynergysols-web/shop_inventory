@@ -2,12 +2,16 @@ import { Controller, Get } from '@nestjs/common';
 import { can } from '@erp/domain';
 import { CurrentUser, Requires, type AuthUser } from '../auth/decorators.js';
 import { businessDate, dateOnly, milli, paisa } from '../common/convert.js';
+import { DayService } from '../day/day.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /** FR-DSH-01..03, FR-DSH-05. Money figures that reveal profit or stock value only for roles allowed to see them. */
 @Controller('dashboard')
 export class DashboardController {
-  constructor(private readonly db: PrismaService) {}
+  constructor(
+    private readonly db: PrismaService,
+    private readonly day: DayService,
+  ) {}
 
   @Requires('dashboard.view')
   @Get()
@@ -33,6 +37,8 @@ export class DashboardController {
     return {
       date: businessDate(),
       dayStatus: closing?.status ?? 'OPEN',
+      // FR-CLS-08: remind about a past day that was never closed
+      unclosedDay: can(u.role, 'day.view') ? await this.day.unclosedDay(shopId) : null,
       totalProducts: products,
       stockValuePaisa: financials ? paisa(stock[0]?.value ?? 0n) : null,
       purchasesTodayPaisa: sum('PURCHASE', 'totalPaisa'),

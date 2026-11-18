@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, Logger, NotFoundException, type OnApplicationBootstrap } from '@nestjs/common';
+import { type OnModuleDestroy, BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, Logger, NotFoundException, type OnApplicationBootstrap } from '@nestjs/common';
 import { Prisma, type PayMode, type ScanStatus, type ScanType } from '@prisma/client';
 import {
   can,
@@ -23,7 +23,8 @@ import { big, dec, milli, paisa } from '../common/convert.js';
 import { DocumentsService, type DocumentView } from '../documents/documents.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { FILE_STORAGE, type FileStorage } from '../storage/storage.js';
-import { AI_PROVIDER, type AiProvider } from './ai-provider.js';
+import { AiRouter } from './ai/ai-router.js';
+import { readPage } from './ai/read-page.js';
 
 export const ALLOWED_TYPES: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heic' };
 export const MAX_PAGES = 10; // FR-SCAN-03
@@ -96,7 +97,8 @@ export interface LineEdit {
 const BLOCKING = new Set(['MISSING_QTY', 'MISSING_RATE', 'UNKNOWN_UNIT', 'BAD_NUMBER']);
 
 @Injectable()
-export class ScansService implements OnApplicationBootstrap {
+export class ScansService implements OnApplicationBootstrap, OnModuleDestroy {
+  private cleanupTimer: NodeJS.Timeout | null = null;
   private readonly log = new Logger('Scans');
   /** Running extractions, so tests and shutdown can wait for them */
   readonly running = new Map<string, Promise<void>>();
@@ -105,7 +107,7 @@ export class ScansService implements OnApplicationBootstrap {
     private readonly db: PrismaService,
     private readonly documents: DocumentsService,
     @Inject(FILE_STORAGE) private readonly storage: FileStorage,
-    @Inject(AI_PROVIDER) private readonly ai: AiProvider,
+    private readonly router: AiRouter,
   ) {}
 
   /**
@@ -117,6 +119,31 @@ export class ScansService implements OnApplicationBootstrap {
       .updateMany({ where: { status: 'PROCESSING', updatedAt: { lt: new Date(Date.now() - 5 * 60_000) } }, data: { status: 'FAILED', failureReason: 'Reading was interrupted (server restarted). Retry or continue manually.' } })
       .catch(() => ({ count: 0 }));
     if (r.count) this.log.warn(`marked ${r.count} interrupted scan(s) as failed`);
+    // FR-AI-16: remove photos older than each shop's retention period, at start and then daily
+    const run = () => void this.removeExpiredPhotos().catch((e) => this.log.error(`photo cleanup failed: ${(e as Error).message}`));
+    this.cleanupTimer = setInterval(run, 24 * 60 * 60_000);
+    this.cleanupTimer.unref();
+    setTimeout(run, 5 * 60_000).unref();
+  }
+
+  onModuleDestroy(): void {
+    if (this.cleanupTimer) clearInterval(this.cleanupTimer);
+  }
+
+  /**
+   * FR-AI-16: photo retention. Deletes the photo files of scans older than the shop's
+   * photoRetentionDays (default 5 years); the scan, its lines and the posted stock stay.
+   */
+  async removeExpiredPhotos(now = new Date()): Promise<number> {
+    const pages = await this.db.$queryRaw<{ id: string; imageKey: string }[]>`
+      SELECT p.id, p."imageKey" FROM "scan_page" p JOIN "scan" s ON s.id = p."scanId" JOIN "shop" sh ON sh.id = s."shopId"
+      WHERE p."imageKey" <> '' AND s."createdAt" < ${now}::timestamptz - make_interval(days => sh."photoRetentionDays")`;
+    for (const p of pages) {
+      await this.storage.delete(p.imageKey);
+      await this.db.scanPage.update({ where: { id: p.id }, data: { imageKey: '' } });
+    }
+    if (pages.length) this.log.log(`removed ${pages.length} photo(s) past their shop's retention period`);
+    return pages.length;
   }
 
   private assertCanScan(user: AuthUser, type: ScanType): void {
@@ -140,7 +167,8 @@ export class ScansService implements OnApplicationBootstrap {
     const id = randomUUID();
     const hashes = pages.map((p) => createHash('sha256').update(p.bytes).digest('hex'));
     for (const [i, p] of pages.entries()) await this.storage.put(`scans/${user.shopId}/${id}/page-${i + 1}.${ALLOWED_TYPES[p.contentType]}`, p.bytes);
-    const dupes = await this.db.scanPage.count({ where: { phash: { in: hashes }, scan: { shopId: user.shopId, status: 'CONFIRMED' } } });
+    // FR-SCAN-09: the exact same photo file again (same bill read again is checked after reading)
+    const dupes = await this.db.scanPage.count({ where: { sha256: { in: hashes }, scan: { shopId: user.shopId, status: 'CONFIRMED' } } });
     await this.db.scan.create({
       data: {
         id,
@@ -151,7 +179,7 @@ export class ScansService implements OnApplicationBootstrap {
         clientId,
         pageCount: pages.length,
         checkFlags: dupes ? ['DUPLICATE_PHOTO'] : [],
-        pages: { create: pages.map((p, i) => ({ pageNo: i + 1, imageKey: `scans/${user.shopId}/${id}/page-${i + 1}.${ALLOWED_TYPES[p.contentType]}`, phash: hashes[i] })) },
+        pages: { create: pages.map((p, i) => ({ pageNo: i + 1, imageKey: `scans/${user.shopId}/${id}/page-${i + 1}.${ALLOWED_TYPES[p.contentType]}`, sha256: hashes[i] })) },
       },
     });
     await this.db.auditLog.create({ data: { shopId: user.shopId, userId: user.userId, action: 'scan.create', entity: 'scan', entityId: id, after: { type, pages: pages.length } } });
@@ -168,7 +196,11 @@ export class ScansService implements OnApplicationBootstrap {
   /** FR-AI-01..09, FR-AI-12/13: read every page in parallel, merge, check, match. */
   async process(id: string): Promise<void> {
     const scan = await this.db.scan.findUniqueOrThrow({ where: { id }, include: { pages: { orderBy: { pageNo: 'asc' } } } });
+    let label = 'unknown';
     try {
+      // FR-AI-15/16: hosted key, the shop's own key, or manual mode (no key, no consent, limit reached)
+      const { provider: ai, notice } = await this.router.forShop(scan.shopId, id);
+      label = ai.name;
       const known = await this.db.product.findMany({ where: { shopId: scan.shopId, active: true }, select: { name: true }, orderBy: { updatedAt: 'desc' }, take: 200 });
       const docType = scan.type === 'SALE' ? 'sale' : 'purchase';
       const results = await Promise.all(
@@ -176,9 +208,9 @@ export class ScansService implements OnApplicationBootstrap {
           const bytes = await this.storage.get(pg.imageKey);
           const ext = pg.imageKey.split('.').pop()!;
           const contentType = Object.entries(ALLOWED_TYPES).find(([, e]) => e === ext)?.[0] ?? 'image/jpeg';
-          const r = await this.ai.extract({ pageNo: pg.pageNo, bytes, contentType }, { docType, knownProducts: known.map((k) => k.name) });
+          const r = await readPage(ai, { pageNo: pg.pageNo, bytes, contentType }, { docType, knownProducts: known.map((k) => k.name) });
           await this.db.aiCallLog.create({
-            data: { shopId: scan.shopId, scanId: id, provider: this.ai.name, model: r.usage.model, pageNo: pg.pageNo, tokensIn: r.usage.tokensIn, tokensOut: r.usage.tokensOut, costMicroUsd: BigInt(r.usage.costMicroUsd), ms: r.usage.ms, ok: true },
+            data: { shopId: scan.shopId, scanId: id, provider: ai.name, model: r.strips ? `${r.usage.model} (${r.strips} strips)` : r.usage.model, pageNo: pg.pageNo, tokensIn: r.usage.tokensIn, tokensOut: r.usage.tokensOut, costMicroUsd: BigInt(r.usage.costMicroUsd), ms: r.usage.ms, ok: true },
           });
           return { pageNo: pg.pageNo, r };
         }),
@@ -186,6 +218,21 @@ export class ScansService implements OnApplicationBootstrap {
       const all: AiLine[] = results.flatMap(({ pageNo, r }) => r.lines.map((l) => ({ ...l, page: pageNo })));
       const billTotal = [...results].reverse().find(({ r }) => r.billTotal != null)?.r.billTotal ?? null;
       const head = results.find(({ r }) => r.partyName)?.r;
+      // FR-SCAN-09: the same bill already confirmed (same party and bill number, or same party and total within 60 days)
+      const readTotal = [...results].reverse().find(({ r }) => r.billTotal != null)?.r.billTotal ?? null;
+      const sameBill =
+        head?.partyName && (head.billNo || readTotal != null)
+          ? await this.db.scan.count({
+              where: {
+                shopId: scan.shopId,
+                type: scan.type,
+                status: 'CONFIRMED',
+                id: { not: id },
+                partyNameRead: { equals: head.partyName, mode: 'insensitive' },
+                ...(head.billNo ? { billNoRead: head.billNo } : { readTotalPaisa: BigInt(Math.round(readTotal! * 100)), createdAt: { gte: new Date(Date.now() - 60 * 86400_000) } }),
+              },
+            })
+          : 0;
       const shop = await this.db.aiSetting.findUnique({ where: { shopId: scan.shopId } });
       const check = checkExtraction(all, billTotal, { confidenceThreshold: shop?.confidenceThreshold ?? 0.85 });
 
@@ -233,7 +280,7 @@ export class ScansService implements OnApplicationBootstrap {
             readTotalPaisa: check.billTotalPaisa == null ? null : big(check.billTotalPaisa),
             partyNameRead: head?.partyName ?? null,
             billNoRead: head?.billNo ?? null,
-            checkFlags: [...new Set([...scan.checkFlags.filter((f) => f === 'DUPLICATE_PHOTO'), ...check.flags, ...(this.ai.reads ? [] : ['DEMO_MODE'])])],
+            checkFlags: [...new Set([...scan.checkFlags.filter((f) => f === 'DUPLICATE_PHOTO'), ...check.flags, ...(ai.reads ? [] : ['DEMO_MODE']), ...(notice ? [notice] : []), ...(sameBill ? ['DUPLICATE_BILL'] : [])])],
             missingSerials: check.missingSerials,
             failureReason: null,
           },
@@ -241,7 +288,7 @@ export class ScansService implements OnApplicationBootstrap {
       ]);
     } catch (e) {
       this.log.error(`scan ${id} failed: ${(e as Error).message}`);
-      await this.db.aiCallLog.create({ data: { shopId: scan.shopId, scanId: id, provider: this.ai.name, model: '-', tokensIn: 0, tokensOut: 0, costMicroUsd: 0n, ms: 0, ok: false, error: String((e as Error).message).slice(0, 500) } }).catch(() => {});
+      await this.db.aiCallLog.create({ data: { shopId: scan.shopId, scanId: id, provider: label, model: '-', tokensIn: 0, tokensOut: 0, costMicroUsd: 0n, ms: 0, ok: false, error: String((e as Error).message).slice(0, 500) } }).catch(() => {});
       await this.db.scan.update({ where: { id }, data: { status: 'FAILED', failureReason: String((e as Error).message).slice(0, 300) } });
     }
   }
@@ -347,8 +394,8 @@ export class ScansService implements OnApplicationBootstrap {
       id: s.id,
       type: s.type,
       status: s.status,
-      provider: this.ai.name,
-      aiReads: this.ai.reads,
+      provider: s.checkFlags.includes('DEMO_MODE') ? 'demo' : 'ai',
+      aiReads: !s.checkFlags.includes('DEMO_MODE'),
       pageCount: s.pageCount,
       partyNameRead: s.partyNameRead,
       billNoRead: s.billNoRead,
@@ -369,6 +416,7 @@ export class ScansService implements OnApplicationBootstrap {
   async page(user: AuthUser, id: string, pageNo: number): Promise<{ bytes: Buffer; contentType: string }> {
     const pg = await this.db.scanPage.findFirst({ where: { scanId: id, pageNo, scan: { shopId: user.shopId } } });
     if (!pg) throw new NotFoundException('Page not found');
+    if (!pg.imageKey) throw new NotFoundException('This photo was removed after the shop retention period (FR-AI-16)');
     const ext = pg.imageKey.split('.').pop()!;
     return { bytes: await this.storage.get(pg.imageKey), contentType: Object.entries(ALLOWED_TYPES).find(([, e]) => e === ext)?.[0] ?? 'application/octet-stream' };
   }

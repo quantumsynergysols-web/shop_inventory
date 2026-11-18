@@ -19,7 +19,11 @@ export function Manual({ type }: { type: 'SALE' | 'PURCHASE' }) {
   const [busy, setBusy] = useState(false);
   const key = useMemo(() => newKey(), []);
   const total = lines.reduce((s, l) => s + Math.round(((l.qtyMilli ?? 0) * (l.ratePaisa ?? 0)) / 1000), 0);
-  const paid = received == null ? (type === 'SALE' ? total : 0) : (toPaisa(received) ?? 0);
+  // FR-REV-13: discount on the bill total
+  const [disc, setDisc] = useState('');
+  const discountPaisa = Math.min(total, toPaisa(disc) ?? 0);
+  const net = total - discountPaisa;
+  const paid = received == null ? (type === 'SALE' ? net : 0) : (toPaisa(received) ?? 0);
 
   async function save() {
     setBusy(true);
@@ -30,7 +34,8 @@ export function Manual({ type }: { type: 'SALE' | 'PURCHASE' }) {
           kind: type,
           partyId: party?.id ?? null,
           lines: lines.map((l) => ({ productId: l.product!.id, qtyMilli: l.qtyMilli, unit: l.unit, ratePaisa: l.ratePaisa })),
-          payments: paid > 0 ? [{ mode, amountPaisa: Math.min(paid, total) }] : [],
+          payments: paid > 0 ? [{ mode, amountPaisa: Math.min(paid, net) }] : [],
+          ...(discountPaisa > 0 ? { discountPaisa } : {}),
         },
         { 'idempotency-key': key },
       );
@@ -62,15 +67,17 @@ export function Manual({ type }: { type: 'SALE' | 'PURCHASE' }) {
         <button className="cta sec" onClick={() => setEditing({ index: null, line: { rawName: '', qtyMilli: 1000, unit: null, ratePaisa: null, product: null } })}><Icon name="plus" /> {t.addLine}</button>
         {lines.length > 0 && (
           <div className="card" style={{ display: 'grid', gap: 10 }}>
-            <div className="rw tot" style={{ borderTop: 0, marginTop: 0, paddingTop: 0 }}><span>TOTAL</span><span className="n">{rs(total)}</span></div>
+            <div className="rw" style={{ marginTop: 0 }}><span>{t.sumLines}</span><span className="n">{rs(total)}</span></div>
+            <label className="f"><span>{t.discount}</span><input className="in num" inputMode="decimal" placeholder="0" value={disc} onChange={(e) => setDisc(e.target.value)} /></label>
+            <div className="rw tot"><span>TOTAL</span><span className="n">{rs(net)}</span></div>
             <PayModes value={mode} onChange={setMode} />
-            <label className="f"><span>{type === 'SALE' ? t.received : t.paidNow}</span><input className="in num" inputMode="decimal" value={received ?? (type === 'SALE' ? String(total / 100) : '')} placeholder="0" onChange={(e) => setReceived(e.target.value)} /></label>
-            {type === 'SALE' && paid < total && <div className={`banner ${party ? 'warn' : 'bad'}`}>{t.udhaar}: {rs(total - paid)}</div>}
+            <label className="f"><span>{type === 'SALE' ? t.received : t.paidNow}</span><input className="in num" inputMode="decimal" value={received ?? (type === 'SALE' ? String(net / 100) : '')} placeholder="0" onChange={(e) => setReceived(e.target.value)} /></label>
+            {type === 'SALE' && paid < net && <div className={`banner ${party ? 'warn' : 'bad'}`}>{t.udhaar}: {rs(net - paid)}</div>}
           </div>
         )}
       </main>
       <div className="dock">
-        <button className="cta" disabled={!lines.length || busy || (type === 'PURCHASE' && !party) || (type === 'SALE' && paid < total && !party)} onClick={save}>
+        <button className="cta" disabled={!lines.length || busy || (type === 'PURCHASE' && !party) || (type === 'SALE' && paid < net && !party)} onClick={save}>
           {busy ? '…' : type === 'PURCHASE' ? t.confirmIn : t.confirmOut}
         </button>
       </div>

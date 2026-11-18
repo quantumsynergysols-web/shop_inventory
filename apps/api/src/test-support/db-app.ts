@@ -4,7 +4,7 @@ import type { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { createApp } from '../app.js';
 import { hashPassword } from '../auth/password.js';
-import type { AppConfig } from '../config.js';
+import { type AppConfig, loadConfig } from '../config.js';
 
 /** Helpers for the *.db.test.ts integration tests. Not used in production. */
 export interface Http {
@@ -17,6 +17,7 @@ export interface Http {
 
 export function testConfig(url: string): AppConfig {
   return {
+    ...loadConfig({ DATABASE_URL: 'postgresql://unused', JWT_SECRET: 'test-only-secret-test-only-secret-1234' }),
     DATABASE_URL: url,
     JWT_SECRET: 'db-test-secret-that-is-long-enough-0123456789',
     PORT: 0,
@@ -57,8 +58,8 @@ export async function makeShop(db: PrismaClient, name: string, phonePrefix: stri
   return { shop, phones };
 }
 
-export async function startApp(url: string): Promise<{ app: INestApplication; base: string }> {
-  const app = await createApp(testConfig(url), {}, { quiet: true });
+export async function startApp(url: string, config: Partial<AppConfig> = {}): Promise<{ app: INestApplication; base: string }> {
+  const app = await createApp({ ...testConfig(url), ...config }, {}, { quiet: true });
   await app.listen(0);
   return { app, base: `http://127.0.0.1:${app.getHttpServer().address().port}/api` };
 }

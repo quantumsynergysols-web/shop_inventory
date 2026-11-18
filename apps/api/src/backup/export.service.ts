@@ -109,6 +109,7 @@ export class ExportService {
     for (const s of scans) {
       const folder = `photos/${s.createdAt.toISOString().slice(0, 10)}_${s.type.toLowerCase()}_${s.id.slice(0, 8)}`;
       for (const p of s.pages) {
+        if (!p.imageKey) continue; // removed after the retention period (FR-AI-16)
         try {
           zip.file(`${folder}/page-${p.pageNo}.${p.imageKey.split('.').pop()}`, await this.storage.get(p.imageKey));
           photos++;

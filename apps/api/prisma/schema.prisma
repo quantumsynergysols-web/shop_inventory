@@ -352,14 +352,17 @@ model ScanPage {
   pageNo      Int
   imageKey    String
   originalKey String?
-  /// Perceptual hash for duplicate-bill detection (FR-SCAN-09)
+  /// SHA-256 of the uploaded file: the exact same photo again
+  sha256      String?
+  /// Not used: a photo fingerprint could not tell apart two bills from the same printed bill book
+  /// (tested 18 Nov 2026). FR-SCAN-09 uses the file hash and, after reading, party + bill no./total.
   phash       String?
   createdAt   DateTime @default(now())
 
   scan Scan @relation(fields: [scanId], references: [id])
 
   @@unique([scanId, pageNo])
-  @@index([phash])
+  @@index([sha256])
   @@map("scan_page")
 }
 

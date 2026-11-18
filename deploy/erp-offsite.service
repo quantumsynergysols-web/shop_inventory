@@ -1,0 +1,18 @@
+# Optional off-site copy of backups and bill photos (deploy/backup-offsite.sh).
+# Installed by setup-server.sh but only runs once erp-offsite.timer is enabled.
+[Unit]
+Description=Shop Inventory ERP off-site backup copy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=erp
+Group=erp
+ExecStart=/opt/erp/bin/backup-offsite.sh
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+# rclone keeps its config (and refreshed tokens) here
+ReadWritePaths=-/opt/erp/.config

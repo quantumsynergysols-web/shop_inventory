@@ -4,12 +4,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Controller, Get, type INestApplication } from '@nestjs/common';
 import { createApp } from '../app.js';
-import type { AppConfig } from '../config.js';
+import { type AppConfig, loadConfig } from '../config.js';
 import { hashPassword } from './password.js';
 import { Requires } from './decorators.js';
 import { MemoryAuthStore } from '../test-support/memory-auth.store.js';
 
 const config: AppConfig = {
+    ...loadConfig({ DATABASE_URL: 'postgresql://unused', JWT_SECRET: 'test-only-secret-test-only-secret-1234' }),
   DATABASE_URL: 'postgresql://unused',
   JWT_SECRET: 'test-secret-that-is-long-enough-0123456789',
   PORT: 0,

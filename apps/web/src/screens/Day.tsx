@@ -7,10 +7,11 @@ import { ErrorBox, Icon, Loading, PayModes, Sheet, Top, useApp, useLoad } from '
 const pct = (x: number, total: number) => (total > 0 ? `${((x / total) * 100).toFixed(1)}%` : '0%');
 
 /** SRS §3.10a "Aaj ka hisaab": sale, profit, expenses, galla count and close (FR-CLS-01..08, FR-EXP-01). */
-export function Day() {
+export function Day({ date: day }: { date?: string } = {}) {
   const { t } = useT();
   const { me, toast } = useApp();
-  const { data, error, reload } = useLoad(() => Promise.all([get('/day'), get('/expense-heads')]), []);
+  // FR-CLS-08: ?date= opens a past day that was left open, so the owner can close it
+  const { data, error, reload } = useLoad(() => Promise.all([get(`/day${day ? `?date=${day}` : ''}`), get('/expense-heads')]), [day]);
   const [counted, setCounted] = useState('');
   const [note, setNote] = useState('');
   const [addExp, setAddExp] = useState(false);
@@ -22,6 +23,22 @@ export function Day() {
   const [d, heads] = data;
   const s = d.summary;
   const countedPaisa = toPaisa(counted);
+  /** FR-CLS-07 / FR-DSH-04: the day's closing as a WhatsApp message for the owner */
+  const summaryText = () =>
+    [
+      `*${t.today} – ${date(d.date)}*`,
+      `${t.sale}: ${rs(s.saleTotalPaisa)} (${s.billCount} ${t.bills})`,
+      s.salesReturnsPaisa ? `${t.returns}: ${rs(s.salesReturnsPaisa)}` : null,
+      `${t.cashSale}: ${rs(s.salesCashPaisa)} · ${t.bankSale}: ${rs(s.salesBankPaisa)} · ${t.creditSale}: ${rs(s.salesCreditPaisa)}`,
+      `${t.gross}: ${rs(s.grossProfitPaisa)}`,
+      `${t.expenses}: ${rs(s.expensesTotalPaisa)}`,
+      `*${t.net}: ${rs(s.netProfitPaisa)}*`,
+      `${t.purchases}: ${rs(s.purchasesPaisa)} · ${t.wasooli}: ${rs(s.wasooliCashPaisa + s.wasooliBankPaisa)}`,
+      `${t.expected}: ${rs(s.expectedCashPaisa)}`,
+      d.closing ? `${t.counted}: ${rs(d.closing.countedCashPaisa)} (${d.closing.differencePaisa === 0 ? t.diffEq : d.closing.differencePaisa < 0 ? t.diffShort(rs(-d.closing.differencePaisa)) : t.diffOver(rs(d.closing.differencePaisa))})` : null,
+    ]
+      .filter(Boolean)
+      .join('\n');
   const diff = countedPaisa == null ? null : countedPaisa - s.expectedCashPaisa;
   const needNote = diff != null && Math.abs(diff) > d.noteLimitPaisa;
   const closed = d.status === 'CLOSED';
@@ -29,7 +46,7 @@ export function Day() {
   async function close(force = false) {
     setBusy(true);
     try {
-      await post('/day/close', { countedCashPaisa: countedPaisa, note: note || null, force });
+      await post('/day/close', { countedCashPaisa: countedPaisa, note: note || null, force, ...(day ? { date: day } : {}) });
       toast(t.closedT);
       setPending(null);
       reload();
@@ -120,6 +137,7 @@ export function Day() {
               <Diff t={t} diff={d.closing.differencePaisa} />
               {d.closing.note && <div className="label" style={{ marginTop: 6 }}>{d.closing.note}</div>}
               <div className="rw tot"><span>{t.closedSub}</span><span className="n">{rs(d.closing.countedCashPaisa)}</span></div>
+              <button className="cta wa" style={{ marginTop: 10 }} onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(summaryText())}`, '_blank', 'noopener')}><Icon name="wa" /> {t.shareSummary}</button>
             </>
           ) : d.canClose ? (
             <>

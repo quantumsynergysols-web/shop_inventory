@@ -4,6 +4,10 @@ const schema = z.object({
   DATABASE_URL: z.string().startsWith('postgresql://'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   PORT: z.coerce.number().int().min(0).max(65535).default(3000),
+  /** 127.0.0.1 in production behind Caddy; 0.0.0.0 lets phones on the same Wi-Fi reach a dev machine */
+  HOST: z.string().default('0.0.0.0'),
+  /** NFR-SEC-04: login attempts per IP address in 15 minutes (on top of the per-account lockout) */
+  LOGIN_LIMIT_PER_IP: z.coerce.number().int().min(1).default(30),
   /** Short-lived access token; the refresh token keeps the device signed in */
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(60 * 60),
   /** FR-AUTH-01: session ends after 30 days without use */
@@ -13,8 +17,28 @@ const schema = z.object({
   LOCKOUT_MINUTES: z.coerce.number().int().positive().default(15),
   /** Bill photos and receipts (local disk in development; S3/R2 later) */
   STORAGE_DIR: z.string().default('storage'),
-  /** "demo" until a real provider and key are configured (FR-AI-08, FR-AI-15) */
+  /** Kept for older .env files; the reader is chosen per shop in AI settings (FR-SET-02) */
   AI_PROVIDER: z.enum(['demo']).default('demo'),
+  /** FR-AI-15: the QSSols-hosted reader shops use by default; "none" = demo/manual until a key is set */
+  HOSTED_AI_PROVIDER: z.enum(['none', 'openai', 'gemini']).default('none'),
+  OPENAI_API_KEY: z.string().default(''),
+  GEMINI_API_KEY: z.string().default(''),
+  OPENAI_MODEL: z.string().default('gpt-4.1-mini'),
+  GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+  /** Overridable for proxies and tests */
+  OPENAI_BASE_URL: z.string().url().default('https://api.openai.com/v1'),
+  GEMINI_BASE_URL: z.string().url().default('https://generativelanguage.googleapis.com/v1beta'),
+  /** FR-AI-09: price per million tokens in US dollars, to log each call's cost; check the provider's price list */
+  OPENAI_PRICE_IN_PER_MTOK: z.coerce.number().min(0).default(0.4),
+  OPENAI_PRICE_OUT_PER_MTOK: z.coerce.number().min(0).default(1.6),
+  GEMINI_PRICE_IN_PER_MTOK: z.coerce.number().min(0).default(0.3),
+  GEMINI_PRICE_OUT_PER_MTOK: z.coerce.number().min(0).default(2.5),
+  /** FR-AI-10/15: scans per shop per month on the hosted key (a shop's own quota setting overrides it) */
+  HOSTED_MONTHLY_SCANS: z.coerce.number().int().min(0).default(300),
+  /** FR-AI-06/07: an AI call longer than this fails and the scan offers retry */
+  AI_TIMEOUT_MS: z.coerce.number().int().min(1000).default(90_000),
+  /** NFR-SEC-01: encrypts shops' own AI keys (AES-256-GCM); at least 32 characters. Empty = own keys cannot be saved */
+  AI_KEY_SECRET: z.union([z.literal(''), z.string().min(32, 'AI_KEY_SECRET must be at least 32 characters')]).default(''),
   /** Recorded AI results for known sample bills, used by the demo provider */
   DEMO_FIXTURES_DIR: z.string().default('demo-fixtures'),
   /** Built web app (apps/web/dist) served at / when present, so one port serves the PWA and the API */

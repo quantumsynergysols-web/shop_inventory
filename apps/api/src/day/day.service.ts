@@ -161,7 +161,9 @@ export class DayService {
     const day = dateOnly(ymd);
     const existing = await this.db.dayClosing.findFirst({ where: { shopId: user.shopId, businessDate: day } });
     if (existing?.status === 'CLOSED') throw new ConflictException('This day is already closed');
-    if (ymd !== today && (existing?.status !== 'REOPENED' || user.role !== 'OWNER')) throw new ForbiddenException('Only a reopened past day can be closed again, by the owner');
+    // FR-CLS-05/08: a past day is closed by the owner only: one left open by mistake, or one reopened
+    if (ymd > today) throw new ForbiddenException('A future day cannot be closed');
+    if (ymd !== today && user.role !== 'OWNER') throw new ForbiddenException('Only the owner can close a past day');
     const pending = await this.pendingScans(user.shopId, ymd);
     if (pending && !input.force) throw new ConflictException({ code: 'PENDING_SCANS', message: `${pending} scan(s) of this day are not confirmed. Confirm or discard them first.`, pending });
 
@@ -213,6 +215,23 @@ export class DayService {
     await this.db.dayClosing.update({ where: { id: c.id }, data: { status: 'REOPENED', reopenReason: reason } });
     await this.db.auditLog.create({ data: { shopId: user.shopId, userId: user.userId, action: 'day.reopen', entity: 'day_closing', entityId: c.id, reason } });
     return { date: ymd, status: 'REOPENED' };
+  }
+
+  /**
+   * FR-CLS-08: the most recent past day (last 30 days) with sales, purchases or expenses that was
+   * never closed, so the app can remind the user when it opens.
+   */
+  async unclosedDay(shopId: string, today = businessDate()): Promise<string | null> {
+    const t = dateOnly(today);
+    const since = new Date(t.getTime() - 30 * 86400_000);
+    const rows = await this.db.$queryRaw<{ d: Date }[]>`
+      SELECT d FROM (
+        SELECT "docDate" AS d FROM "document" WHERE "shopId" = ${shopId}::uuid AND "docDate" >= ${since} AND "docDate" < ${t}
+        UNION SELECT "businessDate" FROM "expense" WHERE "shopId" = ${shopId}::uuid AND "businessDate" >= ${since} AND "businessDate" < ${t}
+      ) x
+      WHERE NOT EXISTS (SELECT 1 FROM "day_closing" c WHERE c."shopId" = ${shopId}::uuid AND c."businessDate" = x.d AND c.status = 'CLOSED')
+      ORDER BY d DESC LIMIT 1`;
+    return rows[0] ? rows[0].d.toISOString().slice(0, 10) : null;
   }
 
   /** FR-CLS-09/10: month totals, expenses by head, best-selling and most profitable items. */

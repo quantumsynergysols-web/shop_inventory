@@ -11,7 +11,7 @@ import type { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { createApp } from '../app.js';
 import { hashPassword } from '../auth/password.js';
-import type { AppConfig } from '../config.js';
+import { type AppConfig, loadConfig } from '../config.js';
 import { DemoAiProvider } from './ai-provider.js';
 
 const url = process.env.TEST_DATABASE_URL;
@@ -77,6 +77,7 @@ describe('scan flow against PostgreSQL', { skip: !url && 'TEST_DATABASE_URL not 
     id.customer = (await db.party.create({ data: { shopId: shop.id, name: 'Rana Builders', normalizedName: 'rana builders', type: 'CUSTOMER', phone: '0300-7654321' } })).id;
 
     const config: AppConfig = {
+    ...loadConfig({ DATABASE_URL: 'postgresql://unused', JWT_SECRET: 'test-only-secret-test-only-secret-1234' }),
       DATABASE_URL: url!,
       JWT_SECRET: 'db-test-secret-that-is-long-enough-0123456789',
       PORT: 0,

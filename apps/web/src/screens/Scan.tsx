@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { enqueue, isNetworkError, toForm, type QueuedScan } from '../offline-queue';
 import { ApiError, blobUrl, get, newKey, post, put, request } from '../api';
 import { qty, rs, toPaisa } from '../format';
 import { useT } from '../i18n';
@@ -54,15 +55,23 @@ export function ScanNew({ type }: { type: 'SALE' | 'PURCHASE' }) {
 
   async function upload() {
     setBusy(true);
+    const scan: QueuedScan = { clientId: newKey(), type, at: Date.now(), pages: pages.map((p, i) => ({ blob: p.blob, name: `page-${i + 1}.${p.blob.type === 'image/png' ? 'png' : 'jpg'}` })) };
     try {
-      const form = new FormData();
-      form.set('type', type);
-      form.set('clientId', newKey());
-      pages.forEach((p, i) => form.append('pages', p.blob, `page-${i + 1}.${p.blob.type === 'image/png' ? 'png' : 'jpg'}`));
-      const res = await request('/scans', { method: 'POST', body: form });
+      const res = await request('/scans', { method: 'POST', body: toForm(scan) });
       const s = await res.json();
       go(`/scan/${s.id}`);
     } catch (e) {
+      if (isNetworkError(e)) {
+        // FR-SCAN-07: no internet: keep it on the phone and send it when the connection is back
+        try {
+          await enqueue(scan);
+          toast(t.queuedOffline);
+          go('/home');
+          return;
+        } catch {
+          /* storage blocked: fall through to the error */
+        }
+      }
       toast(e instanceof ApiError ? e.message : t.offline);
       setBusy(false);
     }
@@ -200,7 +209,11 @@ function Review({ scan, onChange }: { scan: any; onChange: (s: any) => void }) {
   const needs = (l: any) => !l.product || l.flags.length > 0 || l.shortStock;
   const shown = tab === 'need' ? scan.lines.filter(needs) : scan.lines;
   const total = scan.linesTotalPaisa;
-  const receivedPaisa = received == null ? total : (toPaisa(received) ?? 0);
+  // FR-REV-13: discount on the bill total
+  const [disc, setDisc] = useState('');
+  const discountPaisa = Math.min(total, toPaisa(disc) ?? 0);
+  const net = total - discountPaisa;
+  const receivedPaisa = received == null ? net : (toPaisa(received) ?? 0);
 
   async function save(lines: EditLine[]) {
     const body = lines.map((l) => ({ id: l.id, serialNo: l.serialNo ?? null, page: l.page ?? 1, rawName: l.rawName, qtyMilli: l.qtyMilli, unit: l.unit, ratePaisa: l.ratePaisa, productId: l.product?.id ?? null }));
@@ -214,8 +227,8 @@ function Review({ scan, onChange }: { scan: any; onChange: (s: any) => void }) {
   async function confirm() {
     setBusy(true);
     try {
-      const payments = kind === 'SALE' ? (receivedPaisa > 0 ? [{ mode, amountPaisa: Math.min(receivedPaisa, total) }] : []) : receivedPaisa > 0 && received != null ? [{ mode, amountPaisa: Math.min(receivedPaisa, total) }] : [];
-      const doc = await post(`/scans/${scan.id}/confirm`, { partyId: party?.id ?? null, payments }, { 'idempotency-key': key });
+      const payments = kind === 'SALE' ? (receivedPaisa > 0 ? [{ mode, amountPaisa: Math.min(receivedPaisa, net) }] : []) : receivedPaisa > 0 && received != null ? [{ mode, amountPaisa: Math.min(receivedPaisa, net) }] : [];
+      const doc = await post(`/scans/${scan.id}/confirm`, { partyId: party?.id ?? null, payments, ...(discountPaisa > 0 ? { discountPaisa } : {}) }, { 'idempotency-key': key });
       go(`/doc/${doc.id}?new=1`);
     } catch (e) {
       const b = (e as ApiError).body;
@@ -225,15 +238,21 @@ function Review({ scan, onChange }: { scan: any; onChange: (s: any) => void }) {
   }
 
   const blockers = scan.blockingCount + (kind === 'PURCHASE' && !party ? 1 : 0);
-  const credit = kind === 'SALE' && receivedPaisa < total;
+  const credit = kind === 'SALE' && receivedPaisa < net;
+  const paperOk = scan.readTotalPaisa != null && (Math.abs(scan.readTotalPaisa - total) <= 100 || Math.abs(scan.readTotalPaisa - net) <= 100);
 
   return (
     <>
       <Top title={t.review} backTo="/home" right={<button className="ib" aria-label={t.discard} onClick={async () => { if (confirm_(t.discardQ)) { await post(`/scans/${scan.id}/discard`); go('/home'); } }}><Icon name="trash" /></button>} />
       <main className="body" style={{ paddingBottom: 170 }}>
-        {!scan.aiReads && <div className="banner info">{scan.lines.length ? t.demoMode : t.manualMode}</div>}
+        {!scan.aiReads && (
+          <div className="banner info">
+            {scan.flags.includes('AI_NO_CONSENT') ? t.aiNoConsent : scan.flags.includes('AI_QUOTA_REACHED') ? t.aiQuota : scan.flags.includes('AI_KEY_UNREADABLE') ? t.aiKeyBad : scan.flags.includes('AI_NOT_CONFIGURED') ? t.aiNotConfigured : scan.lines.length ? t.demoMode : t.manualMode}
+          </div>
+        )}
         {scan.flags.includes('ROWS_MAY_BE_MISSING') && <div className="banner bad">{t.missingRows(scan.missingSerials.join(', '))}</div>}
         {scan.flags.includes('DUPLICATE_PHOTO') && <div className="banner warn">{t.dupPhoto}</div>}
+        {scan.flags.includes('DUPLICATE_BILL') && !scan.flags.includes('DUPLICATE_PHOTO') && <div className="banner warn">{t.dupBill}</div>}
 
         <PartyPicker kind={kind} value={party} onChange={setParty} suggested={scan.suggestedParty} />
 
@@ -285,7 +304,10 @@ function Review({ scan, onChange }: { scan: any; onChange: (s: any) => void }) {
         <div className="card total">
           <span>{t.sumLines}</span><span className="n">{rs(total)}</span>
           {scan.readTotalPaisa != null && <><span>{t.sumPaper}</span><span className="n">{rs(scan.readTotalPaisa)}</span></>}
-          {scan.readTotalPaisa != null && <span style={{ gridColumn: '1/-1' }} className={Math.abs(scan.readTotalPaisa - total) <= 100 ? 'green' : 'red'}>{Math.abs(scan.readTotalPaisa - total) <= 100 ? `✓ ${t.sumOk}` : t.totalMismatch}</span>}
+          <span>{t.discount}</span>
+          <input className="in num" style={{ maxWidth: 140, justifySelf: 'end' }} inputMode="decimal" placeholder="0" aria-label={t.discount} value={disc} onChange={(e) => setDisc(e.target.value)} />
+          {discountPaisa > 0 && <><b>{t.netTotal}</b><b className="n">{rs(net)}</b></>}
+          {scan.readTotalPaisa != null && <span style={{ gridColumn: '1/-1' }} className={paperOk ? 'green' : 'red'}>{paperOk ? `✓ ${t.sumOk}` : t.totalMismatch}</span>}
         </div>
 
         <div className="card" style={{ display: 'grid', gap: 10 }}>
@@ -293,9 +315,9 @@ function Review({ scan, onChange }: { scan: any; onChange: (s: any) => void }) {
           <PayModes value={mode} onChange={setMode} />
           <label className="f">
             <span>{kind === 'SALE' ? t.received : t.paidNow}</span>
-            <input className="in num" inputMode="decimal" value={received ?? (kind === 'SALE' ? String(total / 100) : '')} placeholder="0" onChange={(e) => setReceived(e.target.value)} />
+            <input className="in num" inputMode="decimal" value={received ?? (kind === 'SALE' ? String(net / 100) : '')} placeholder="0" onChange={(e) => setReceived(e.target.value)} />
           </label>
-          {credit && <div className={`banner ${party ? 'warn' : 'bad'}`}>{t.udhaar}: {rs(total - receivedPaisa)}{!party ? ` — ${t.customer}?` : ''}</div>}
+          {credit && <div className={`banner ${party ? 'warn' : 'bad'}`}>{t.udhaar}: {rs(net - receivedPaisa)}{!party ? ` — ${t.customer}?` : ''}</div>}
         </div>
       </main>
       <div className="dock">

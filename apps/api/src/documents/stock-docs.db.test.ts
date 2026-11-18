@@ -125,6 +125,19 @@ describe('returns, adjustments and opening stock against PostgreSQL', { skip: !u
     assert.equal(dash.salesTodayPaisa, s.saleTotalPaisa);
   });
 
+  test('profit per product and category subtracts returns (FR-CLS-10)', async () => {
+    const r = await api.call('GET', '/reports/profit?by=product&format=json', 'owner');
+    assert.equal(r.status, 200, JSON.stringify(r.json));
+    const row = (name: string) => r.json.rows.find((x: any) => x.name === name);
+    // pipes: 10 sold, all 10 returned; fans: 2 sold for 9,600, 1 returned
+    assert.deepEqual([row('PVC Pipe 1 inch').qty, row('PVC Pipe 1 inch').revenue, row('PVC Pipe 1 inch').profit], [0, 0, 0]);
+    assert.deepEqual([row('Ceiling Fan 48 inch').qty, row('Ceiling Fan 48 inch').revenue, row('Ceiling Fan 48 inch').cogs], [q(1), rs(4800), rs(3850)]);
+    assert.equal(row('TOTAL').profit, rs(950));
+    const c = await api.call('GET', '/reports/profit?by=category&format=json', 'owner');
+    assert.equal(c.json.rows.find((x: any) => x.name === 'No category').profit, rs(950));
+    assert.equal((await api.call('GET', '/reports/profit?format=json', 'sales')).status, 403);
+  });
+
   test('stock adjustment and physical count, owner only (FR-STK-07)', async () => {
     const { call } = api;
     assert.equal((await call('POST', '/adjustments', 'store', { reason: 'count', lines: [{ productId: id.pipe, countedMilli: q(90) }] })).status, 403);

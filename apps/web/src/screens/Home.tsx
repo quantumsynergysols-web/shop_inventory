@@ -1,5 +1,5 @@
 import { get } from '../api';
-import { qty, rs, time } from '../format';
+import { date as fmtDate, qty, rs, time } from '../format';
 import { useT } from '../i18n';
 import { ErrorBox, Icon, Loading, Nav, useApp, useLoad } from '../ui';
 
@@ -67,6 +67,12 @@ export function Home() {
           )}
           {me.role !== 'ACCOUNTANT' && <a className="link" href={`#/manual?type=${canScan(me.role, 'SALE') ? 'SALE' : 'PURCHASE'}`} style={{ textAlign: 'center' }}>{t.manual}</a>}
         </div>
+
+        {dash.unclosedDay && (
+          <a className="banner warn" href={`#/day?date=${dash.unclosedDay}`} style={{ textDecoration: 'none' }}>
+            {t.unclosedDay(fmtDate(dash.unclosedDay))} →
+          </a>
+        )}
 
         {dash.pendingReviews > 0 && (
           <div className="card">

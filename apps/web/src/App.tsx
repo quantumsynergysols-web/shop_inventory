@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { resume, setLogoutHandler, type Me } from './api';
+import { watchQueue } from './offline-queue';
 import { DICTS, LangContext, type Lang } from './i18n';
+import { AiSettings } from './screens/AiSettings';
 import { Day } from './screens/Day';
 import { Doc } from './screens/Doc';
 import { Home } from './screens/Home';
@@ -37,7 +39,7 @@ function Screen({ r }: { r: Route }) {
     case 'ledger':
       return b ? <PartyView id={b} /> : <LedgerList />;
     case 'day':
-      return <Day />;
+      return <Day date={r.query.get('date') ?? undefined} />;
     case 'more':
       return <More />;
     case 'month':
@@ -46,6 +48,8 @@ function Screen({ r }: { r: Route }) {
       return <Users />;
     case 'settings':
       return <Settings />;
+    case 'ai':
+      return <AiSettings />;
     case 'opening':
       return <OpeningImport />;
     default:
@@ -57,6 +61,8 @@ export function App() {
   const [lang, setLangState] = useState<Lang>(savedLang);
   const [me, setMe] = useState<Me | null | undefined>(undefined);
   const [toastMsg, toast] = useToast();
+  // FR-SCAN-07: scans waiting on this phone for the internet
+  const [queued, setQueued] = useState(0);
   const route = useRoute();
 
   const setLang = (l: Lang) => {
@@ -75,6 +81,12 @@ export function App() {
     resume().then(setMe).catch(() => setMe(null));
   }, []);
 
+  useEffect(() => {
+    if (!me) return;
+    return watchQueue(setQueued, (n) => toast(DICTS[lang].queueSent(n)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me]);
+
   const langValue = useMemo(() => ({ lang, t: DICTS[lang], setLang }), [lang]);
   return (
     <LangContext.Provider value={langValue}>
@@ -85,6 +97,7 @@ export function App() {
           <Login onDone={setMe} />
         ) : (
           <AppCtx.Provider value={{ me, toast, setMe }}>
+            {queued > 0 && <div className="banner warn" role="status" style={{ margin: '8px 16px 0' }}>{DICTS[lang].queueWaiting(queued)}</div>}
             <Screen r={route} />
           </AppCtx.Provider>
         )}

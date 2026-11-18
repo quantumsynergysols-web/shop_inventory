@@ -1,0 +1,48 @@
+# Shop Inventory ERP API + web app (one Node process on 127.0.0.1:PORT, Caddy in front).
+# Installed to /etc/systemd/system/erp.service by setup-server.sh.
+[Unit]
+Description=Shop Inventory ERP
+Documentation=file:///opt/erp/current/deploy/README.md
+After=network-online.target postgresql.service
+Wants=network-online.target postgresql.service
+
+[Service]
+Type=simple
+User=erp
+Group=erp
+# /opt/erp/current is a symlink to the release deploy.sh built last
+WorkingDirectory=/opt/erp/current/apps/api
+EnvironmentFile=/etc/erp/erp.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node --enable-source-maps dist/main.js
+Restart=always
+RestartSec=5
+# Nest closes the HTTP server and the database pool on SIGTERM (enableShutdownHooks)
+KillSignal=SIGTERM
+TimeoutStopSec=30
+UMask=0027
+
+# Hardening: the app only writes bill photos and backups
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/erp/storage /var/lib/erp/backups
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+# No MemoryDenyWriteExecute: Node's JIT needs writable+executable memory.
+
+[Install]
+WantedBy=multi-user.target

@@ -24,11 +24,19 @@ export interface PageExtraction {
   usage: { model: string; tokensIn: number; tokensOut: number; costMicroUsd: number; ms: number };
 }
 
+export interface ReadHints {
+  docType: 'purchase' | 'sale';
+  /** FR-AI-11: names the shop often uses */
+  knownProducts: string[];
+  strip?: { index: number; count: number };
+}
+
 export interface AiProvider {
   readonly name: string;
   /** True when it really reads the photo; false for demo/manual mode (FR-AI-08) */
   readonly reads: boolean;
-  extract(page: PageInput, hints: { docType: 'purchase' | 'sale'; knownProducts: string[] }): Promise<PageExtraction>;
+  /** strip: this image is one horizontal strip of a long page (FR-AI-12) */
+  extract(page: PageInput, hints: ReadHints): Promise<PageExtraction>;
 }
 
 export const AI_PROVIDER = Symbol('AI_PROVIDER');

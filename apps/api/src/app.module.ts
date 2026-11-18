@@ -31,6 +31,8 @@ import { BackupController } from './backup/backup.controller.js';
 import { BackupService } from './backup/backup.service.js';
 import { ExportService } from './backup/export.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
+import { AiRouter } from './scans/ai/ai-router.js';
+import { AiSettingsController } from './scans/ai/ai-settings.controller.js';
 import { ShopContextInterceptor } from './prisma/shop-context.js';
 
 export interface AppOverrides {
@@ -62,6 +64,7 @@ export class AppModule {
       DayService,
       { provide: FILE_STORAGE, useClass: LocalDiskStorage },
       DemoAiProvider,
+      AiRouter,
       { provide: AI_PROVIDER, useExisting: DemoAiProvider },
       { provide: APP_GUARD, useClass: AuthGuard },
       { provide: APP_FILTER, useClass: DomainErrorsFilter },
@@ -70,7 +73,7 @@ export class AppModule {
     return {
       module: AppModule,
       imports: [JwtModule.register({ secret: config.JWT_SECRET, signOptions: { algorithm: 'HS256' }, verifyOptions: { algorithms: ['HS256'] } })],
-      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, StockDocsController, ScansController, DashboardController, DayController, ReportsController, UsersController, BackupController],
+      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, StockDocsController, ScansController, DashboardController, DayController, ReportsController, UsersController, BackupController, AiSettingsController],
       providers,
     };
   }

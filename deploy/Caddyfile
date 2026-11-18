@@ -1,0 +1,48 @@
+# Caddy in front of the Shop Inventory ERP (automatic HTTPS from Let's Encrypt).
+# setup-server.sh copies this to /etc/caddy/Caddyfile and replaces erp.example.com with your
+# domain. If you give it an e-mail address it adds a global block at the top:
+#   { email you@example.com }   (Let's Encrypt expiry notices; optional)
+# After editing the copy on the server:
+#   sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
+
+erp.example.com {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# The receipt preview is a same-origin iframe; nobody else may frame the app
+		X-Frame-Options "SAMEORIGIN"
+		-Server
+		-X-Powered-By
+		# No Content-Security-Policy on purpose: the app loads Google Fonts
+		# (fonts.googleapis.com, fonts.gstatic.com); add one only after testing every screen.
+	}
+
+	# App shell and service worker: always ask the server, so a new version shows up
+	# straight after a deploy (the API itself sends max-age=1h for static files)
+	@shell path / /index.html /sw.js /manifest.webmanifest
+	header @shell >Cache-Control "no-cache"
+
+	# Bill photo upload: up to 10 pages x 15 MB in one multipart request (POST /api/scans)
+	handle /api/scans {
+		request_body {
+			max_size 160MB
+		}
+		reverse_proxy 127.0.0.1:3000
+	}
+
+	# Everything else (opening-stock import is at most 5 MB; JSON bodies are small)
+	handle {
+		request_body {
+			max_size 10MB
+		}
+		reverse_proxy 127.0.0.1:3000
+	}
+
+	log {
+		output stderr
+		format console
+	}
+}

@@ -1,0 +1,12 @@
+# Daily off-site copy at 03:30 Pakistan time, after the app's own backup at BACKUP_HOUR (02:00).
+# Enable: sudo systemctl enable --now erp-offsite.timer
+[Unit]
+Description=Daily off-site copy of Shop Inventory ERP backups
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 Asia/Karachi
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

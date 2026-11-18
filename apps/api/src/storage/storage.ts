@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { Inject, Injectable } from '@nestjs/common';
 import { APP_CONFIG, type AppConfig } from '../config.js';
@@ -10,6 +10,8 @@ import { APP_CONFIG, type AppConfig } from '../config.js';
 export interface FileStorage {
   put(key: string, bytes: Uint8Array): Promise<void>;
   get(key: string): Promise<Buffer>;
+  /** FR-AI-16: photos older than the shop's retention period are removed */
+  delete(key: string): Promise<void>;
 }
 
 export const FILE_STORAGE = Symbol('FILE_STORAGE');
@@ -37,5 +39,9 @@ export class LocalDiskStorage implements FileStorage {
 
   get(key: string): Promise<Buffer> {
     return readFile(this.path(key));
+  }
+
+  async delete(key: string): Promise<void> {
+    await rm(this.path(key), { force: true });
   }
 }

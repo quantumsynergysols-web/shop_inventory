@@ -31,13 +31,19 @@ export function More() {
                 ['stock-ledger', t.stockLedger],
                 ['stock-valuation', t.valuation],
                 ['party-balances', t.partyBal],
-              ].map(([k, label]) => (
-                <div key={k} className="item">
-                  <span className="grow"><b>{label}</b></span>
-                  <button className="link" onClick={() => download(`/reports/${k}?format=xlsx`, `${k}-${today}.xlsx`)}>Excel</button>
-                  <button className="link" onClick={() => download(`/reports/${k}?format=csv`, `${k}-${today}.csv`)}>CSV</button>
-                </div>
-              ))}
+                ['profit?by=product&', t.profitProduct],
+                ['profit?by=category&', t.profitCategory],
+              ].map(([k = '', label]) => {
+                const path = k.includes('?') ? `/reports/${k}` : `/reports/${k}?`;
+                const file = k.replace(/[?&=]+/g, '-').replace(/-$/, '');
+                return (
+                  <div key={k} className="item">
+                    <span className="grow"><b>{label}</b></span>
+                    <button className="link" onClick={() => download(`${path}format=xlsx`, `${file}-${today}.xlsx`)}>Excel</button>
+                    <button className="link" onClick={() => download(`${path}format=csv`, `${file}-${today}.csv`)}>CSV</button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -45,6 +51,7 @@ export function More() {
         <div className="card">
           <div className="list">
             {owner && <a className="item" href="#/users"><span className="grow"><b>{t.users}</b></span><Icon name="chev" flip /></a>}
+            {owner && <a className="item" href="#/ai"><span className="grow"><b>{t.aiSettings}</b></span><Icon name="chev" flip /></a>}
             {owner && <a className="item" href="#/opening"><span className="grow"><b>{t.importOpening}</b></span><Icon name="chev" flip /></a>}
             {owner && <a className="item" href="#/settings"><span className="grow"><b>{t.settings}</b></span><Icon name="chev" flip /></a>}
             <div className="item">
