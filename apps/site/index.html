@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Shop Inventory ERP – Photo Scan · Photo the bill, stock is done</title>
   <meta name="description" content="For small shops in Pakistan: photograph a handwritten or printed bill, check every line beside its photo, and stock updates itself. Urdu and English. By Quantum Synergy Solutions.">
-  <meta name="theme-color" content="#2440c9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0c0f1c" media="(prefers-color-scheme: dark)">
-  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#060915">
+  <meta name="color-scheme" content="dark">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <!-- Open Graph / sharing. Owner: when the domain is known, make og:image and og:url absolute (https://your-domain/img/og.jpg). -->
@@ -22,6 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Caveat:wght@600;700&display=swap">
+  <link rel="preload" as="image" href="img/bill-purchase.webp" type="image/webp">
   <link rel="stylesheet" href="styles.css">
   <script>
     // Language chosen earlier: switch direction before first paint so Urdu visitors do not see an English flash.
@@ -48,20 +48,25 @@
     <button class="lang-toggle" type="button" id="langBtn" lang="ur">اردو</button>
     <a class="btn btn-sm" href="/app/" data-t="open">Open the app</a>
   </div>
+  <span class="read-bar" aria-hidden="true"></span>
 </header>
 
 <main id="main">
 
 <!-- HERO -->
-<section class="hero" aria-labelledby="hero-h">
+<section class="hero" aria-labelledby="hero-h" data-anim>
+  <div class="hero-bg" aria-hidden="true">
+    <span class="aur a1"></span><span class="aur a2"></span><span class="aur a3"></span>
+    <span class="ruled"></span><span class="grain"></span>
+  </div>
   <div class="wrap hero-in">
     <div class="hero-copy">
-      <p class="eyebrow" data-t="hero.eyebrow">For sanitary, electrical, plumbing, crockery and hardware shops</p>
-      <h1 id="hero-h" data-t="hero.h1">Photo the bill.<br>Check the lines.<br><em>Stock is done.</em></h1>
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span><span data-t="hero.eyebrow">For sanitary, electrical, plumbing, crockery and hardware shops</span></p>
+      <h1 id="hero-h" data-t="hero.h1"><span class="shine">Photo the bill.</span><br><span class="shine">Check the lines.</span><br><em class="hand">Stock is done.<svg class="ul" viewBox="0 0 300 22" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 15 C 60 5, 140 7, 200 10 S 280 13, 296 8"/></svg></em></h1>
       <p class="lead" data-t="hero.lead">Photograph any supplier or sale bill, handwritten or printed, in Urdu, Roman Urdu or English. AI reads every line, you check each one beside its photo, and stock goes up or down by itself.</p>
       <div class="ctas">
-        <a class="btn" href="#contact" data-t="cta.demo">Request a demo</a>
-        <a class="btn btn-ghost" href="/app/" data-t="open">Open the app</a>
+        <a class="btn btn-glow magnetic" href="#contact"><span data-t="cta.demo">Request a demo</span><svg class="arr" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn btn-ghost magnetic" href="/app/" data-t="open">Open the app</a>
       </div>
       <ul class="ticks" role="list">
         <li data-t="hero.p1">Works on any Android phone</li>
@@ -71,77 +76,165 @@
     </div>
 
     <figure class="stage" role="img" aria-label="A handwritten supplier bill from Al-Madina Sanitary Store next to a phone. On the phone, every line of the bill is listed with its own strip of the photo above it; one line is marked to check and a note says row 5 may be missing." data-t-aria="hero.fig">
-      <div class="bill-shot">
-        <img src="img/bill-purchase.webp" width="600" height="820" alt="" fetchpriority="high">
-        <span class="frame" aria-hidden="true"></span>
-        <span class="sweep" aria-hidden="true"></span>
-      </div>
-      <p class="note-hand n1" data-t="hero.note">each row with its own photo</p>
-      <svg class="arrow-hand" viewBox="0 0 120 60" aria-hidden="true"><path d="M6 10 C40 4, 80 14, 108 46" /><path d="M96 44 L109 47 L106 34" /></svg>
-
-      <div class="phone">
-        <div class="screen p-ui">
-          <div class="p-top">
-            <span class="p-back" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></span>
-            <div class="p-title"><b data-t="ph.title">Check the bill</b><small class="ltr">Al-Madina Sanitary · #2417</small></div>
-          </div>
-          <div class="p-sum"><span data-t="ph.read">5 rows read</span><span class="tag t-warn" data-t="ph.tocheck">2 to check</span></div>
-          <div class="p-lines">
-            <div class="p-ln" style="--i:1"><span class="crop" style="--y:24.55%"></span><div class="p-r"><b class="nm">PVC Pipe 1 inch – 10 ft</b><span class="tag t-ok" data-t="ph.ok">Matched</span></div><div class="p-r2 n">50 × Rs 450 · Rs 22,500</div></div>
-            <div class="p-ln" style="--i:2"><span class="crop" style="--y:30.49%"></span><div class="p-r"><b class="nm">Elbow Joint 1 inch</b><span class="tag t-ok" data-t="ph.ok">Matched</span></div><div class="p-r2 n">100 × Rs 35 · Rs 3,500</div></div>
-            <div class="p-ln" style="--i:3"><span class="crop" style="--y:36.43%"></span><div class="p-r"><b class="nm">Ceiling Fan 48 inch</b><span class="tag t-ok" data-t="ph.ok">Matched</span></div><div class="p-r2 n">12 × Rs 3,850 · Rs 46,200</div></div>
-            <div class="p-ln" style="--i:4"><span class="crop" style="--y:42.38%"></span><div class="p-r"><b class="nm">Switch Board 8-gang</b><span class="tag t-new" data-t="ph.learned">Learned</span></div><div class="p-r2 n">30 × Rs 620 · Rs 18,600</div></div>
-            <div class="p-miss" style="--i:5" data-t="ph.miss">Row 5 may be missing: the rows don’t add up to the bill total.</div>
-            <div class="p-ln need" style="--i:6"><span class="crop" style="--y:54.26%"></span><div class="p-r"><b class="nm">Ball Valve ½ inch</b><span class="tag t-warn" data-t="ph.check">Check</span></div><div class="p-r2 n">40 × Rs 260 · Rs 10,400</div></div>
-          </div>
-          <div class="p-dock"><span class="p-cta" data-t="ph.confirm">Confirm · add to stock</span></div>
+      <div class="bill3d">
+        <div class="bill-shot">
+          <img src="img/bill-purchase.webp" width="600" height="820" alt="" fetchpriority="high">
+          <span class="frame"></span>
+          <span class="rowhl" data-row="1" style="--t:23.17%"></span>
+          <span class="rowhl" data-row="2" style="--t:28.78%"></span>
+          <span class="rowhl" data-row="3" style="--t:34.39%"></span>
+          <span class="rowhl" data-row="4" style="--t:40%"></span>
+          <span class="rowhl miss" data-row="5" style="--t:45.61%"><i>?</i></span>
+          <span class="rowhl" data-row="6" style="--t:51.22%"></span>
+          <span class="beam"></span>
         </div>
       </div>
+      <p class="note-hand" data-t="hero.note">each row with its own photo</p>
+      <svg class="arrow-hand" viewBox="0 0 120 60" aria-hidden="true"><path pathLength="1" d="M6 10 C40 4, 80 14, 108 46" /><path pathLength="1" d="M96 44 L109 47 L106 34" /></svg>
+
+      <div class="phone-float">
+        <div class="phone glass">
+          <div class="screen p-ui">
+            <div class="p-top">
+              <span class="p-back" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></span>
+              <div class="p-title"><b data-t="ph.title">Check the bill</b><small class="ltr">Al-Madina Sanitary · #2417</small></div>
+            </div>
+            <div class="p-sum"><span data-t="ph.read">5 rows read</span><span class="tag t-warn" data-t="ph.tocheck">2 to check</span></div>
+            <div class="p-lines">
+              <div class="p-ln" data-row="1"><span class="crop" style="--y:24.55%"></span><div class="p-r"><b class="nm">PVC Pipe 1 inch – 10 ft</b><span class="tag t-ok" data-t="ph.ok">Matched</span></div><div class="p-r2 n">50 × Rs 450 · Rs 22,500</div></div>
+              <div class="p-ln" data-row="2"><span class="crop" style="--y:30.49%"></span><div class="p-r"><b class="nm">Elbow Joint 1 inch</b><span class="tag t-ok" data-t="ph.ok">Matched</span></div><div class="p-r2 n">100 × Rs 35 · Rs 3,500</div></div>
+              <div class="p-ln" data-row="3"><span class="crop" style="--y:36.43%"></span><div class="p-r"><b class="nm">Ceiling Fan 48 inch</b><span class="tag t-ok" data-t="ph.ok">Matched</span></div><div class="p-r2 n">12 × Rs 3,850 · Rs 46,200</div></div>
+              <div class="p-ln" data-row="4"><span class="crop" style="--y:42.38%"></span><div class="p-r"><b class="nm">Switch Board 8-gang</b><span class="tag t-new" data-t="ph.learned">Learned</span></div><div class="p-r2 n">30 × Rs 620 · Rs 18,600</div></div>
+              <div class="p-miss" data-row="5" data-t="ph.miss">Row 5 may be missing: the rows don’t add up to the bill total.</div>
+              <div class="p-ln need" data-row="6"><span class="crop" style="--y:54.26%"></span><div class="p-r"><b class="nm">Ball Valve ½ inch</b><span class="tag t-warn" data-t="ph.check">Check</span></div><div class="p-r2 n">40 × Rs 260 · Rs 10,400</div></div>
+            </div>
+            <div class="p-dock"><span class="p-cta" data-t="ph.confirm">Confirm · add to stock</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="fly-layer" aria-hidden="true"></div>
     </figure>
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section class="sec" id="how" aria-labelledby="how-h">
+<!-- MARQUEE (decorative: items a shop like this sells) -->
+<div class="marquee" aria-hidden="true" data-anim>
+  <div class="mq-row">
+    <div class="mq-track">
+      <span>PVC pipe 1″</span><span class="u">ٹونٹی</span><span>Ceiling fan 48″</span><span>Gate valve ¾″</span><span class="u">پنکھا</span><span>8 gang board</span><span>Elbow 1″</span><span class="u">ڈنر سیٹ</span><span>Ball valve ½</span><span>Wash basin</span><span class="u">سوئچ بورڈ</span><span>Teflon tape</span>
+      <span>PVC pipe 1″</span><span class="u">ٹونٹی</span><span>Ceiling fan 48″</span><span>Gate valve ¾″</span><span class="u">پنکھا</span><span>8 gang board</span><span>Elbow 1″</span><span class="u">ڈنر سیٹ</span><span>Ball valve ½</span><span>Wash basin</span><span class="u">سوئچ بورڈ</span><span>Teflon tape</span>
+    </div>
+  </div>
+  <div class="mq-row rev">
+    <div class="mq-track">
+      <span>Dinner set 24pc</span><span class="u">گیٹ والو</span><span>Tee joint ¾″</span><span>LED bulb</span><span class="u">پائپ</span><span>Mixer tap</span><span>Copper wire</span><span class="u">بلب</span><span>Tea cups ×6</span><span>Door hinge</span><span class="u">تالا</span><span>Socket 2-pin</span>
+      <span>Dinner set 24pc</span><span class="u">گیٹ والو</span><span>Tee joint ¾″</span><span>LED bulb</span><span class="u">پائپ</span><span>Mixer tap</span><span>Copper wire</span><span class="u">بلب</span><span>Tea cups ×6</span><span>Door hinge</span><span class="u">تالا</span><span>Socket 2-pin</span>
+    </div>
+  </div>
+</div>
+
+<!-- FACTS -->
+<section class="facts" aria-label="Product facts" data-t-aria="facts.aria">
   <div class="wrap">
-    <p class="kicker" data-t="how.k">How it works</p>
-    <h2 id="how-h" data-t="how.h">Three steps. No typing out the bill.</h2>
-    <ol class="steps" role="list">
-      <li class="step reveal">
-        <div class="step-art art-photo" aria-hidden="true">
-          <div class="pages"><span></span><span></span><img src="img/bill-purchase.webp" width="600" height="820" alt="" loading="lazy"></div>
-          <span class="frame"></span>
-          <span class="chip n">1 – 10</span>
+    <ul class="facts-in" role="list">
+      <li class="fact reveal"><b class="n"><span class="count" data-to="10">10</span></b><span data-t="fact.pages">pages per bill, read in overlapping strips</span></li>
+      <li class="fact reveal"><b class="n"><span class="count" data-to="4">4</span></b><span data-t="fact.roles">user roles, each sees only their part</span></li>
+      <li class="fact reveal"><b class="n"><span class="count" data-to="2">2</span></b><span data-t="fact.langs">languages: Urdu in Nastaliq and English</span></li>
+      <li class="fact reveal"><b class="n"><span class="count" data-to="58">58</span><i>/</i><span class="count" data-to="80">80</span><small>mm</small></b><span data-t="fact.print">thermal receipts, or A4 and WhatsApp</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="sec how" id="how" aria-labelledby="how-h">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="kicker" data-t="how.k">How it works</p>
+      <h2 id="how-h" data-t="how.h">Three steps. No typing out the bill.</h2>
+    </div>
+    <div class="how-grid">
+      <div class="steps-wrap">
+        <span class="prog" aria-hidden="true"><span class="prog-fill"></span></span>
+        <ol class="steps" role="list">
+          <li class="step reveal" data-step="0">
+            <div class="step-art art-photo" aria-hidden="true">
+              <div class="pages"><span></span><span></span><img src="img/bill-purchase.webp" width="600" height="820" alt="" loading="lazy"></div>
+              <span class="frame"></span>
+              <span class="chip n">1 – 10</span>
+            </div>
+            <span class="step-no n">01</span>
+            <h3 data-t="how.s1">Take a photo</h3>
+            <p data-t="how.s1p">Up to 10 pages per bill, from the phone camera. Long bills are read in overlapping strips, piece by piece.</p>
+          </li>
+          <li class="step reveal" data-step="1">
+            <div class="step-art art-check" aria-hidden="true">
+              <div class="mini-ln"><span class="crop" style="--y:36.43%"></span><div class="p-r"><b class="nm">Ceiling Fan 48 inch</b><span class="tag t-ok" data-t="ph.ok">Matched</span></div><div class="p-r2 n">12 × Rs 3,850</div></div>
+              <div class="mini-ln need"><span class="crop" style="--y:54.26%"></span><div class="p-r"><b class="nm">Ball Valve ½ inch</b><span class="tag t-warn" data-t="ph.check">Check</span></div><div class="p-r2 n">40 × Rs 260</div></div>
+            </div>
+            <span class="step-no n">02</span>
+            <h3 data-t="how.s2">Check every line</h3>
+            <p data-t="how.s2p">Each row sits beside its own crop of the photo. Rows the AI is unsure of, and totals that don’t add up, are marked for you.</p>
+          </li>
+          <li class="step reveal" data-step="2">
+            <div class="step-art art-stock" aria-hidden="true">
+              <div class="stk"><b class="nm">Ceiling Fan 48 inch</b><span class="chg n"><s>12</s><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>24</span></div>
+              <div class="stk"><b class="nm">Elbow Joint 1 inch</b><span class="chg n"><s>140</s><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>240</span></div>
+              <div class="stk-btns"><span class="mini-btn wa">WhatsApp</span><span class="mini-btn" data-t="how.print">Print</span></div>
+            </div>
+            <span class="step-no n">03</span>
+            <h3 data-t="how.s3">Stock updates</h3>
+            <p data-t="how.s3p">Confirm once. Purchases add stock, sales take it out, average cost and udhaar are worked out, and a receipt is ready to print or send on WhatsApp.</p>
+          </li>
+        </ol>
+      </div>
+
+      <div class="how-phone" aria-hidden="true" data-anim>
+        <div class="how-glow"></div>
+        <div class="phone glass" data-screen="0">
+          <div class="screen">
+            <div class="hs hs-0">
+              <div class="cam">
+                <img src="img/bill-purchase.webp" width="600" height="820" alt="" loading="lazy">
+                <span class="frame"></span>
+                <span class="cam-beam"></span>
+              </div>
+              <div class="cam-bar"><span class="cam-pages n"><i></i><i></i><i></i><b>1 – 10</b></span><span class="shutter"></span><span class="cam-sp"></span></div>
+            </div>
+            <div class="hs hs-1 p-ui">
+              <div class="p-top">
+                <span class="p-back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></span>
+                <div class="p-title"><b data-t="ph.title">Check the bill</b><small class="ltr">Al-Madina Sanitary · #2417</small></div>
+              </div>
+              <div class="p-lines">
+                <div class="p-ln"><span class="crop" style="--y:24.55%"></span><div class="p-r"><b class="nm">PVC Pipe 1 inch – 10 ft</b><span class="tag t-ok" data-t="ph.ok">Matched</span></div><div class="p-r2 n">50 × Rs 450 · Rs 22,500</div></div>
+                <div class="p-ln"><span class="crop" style="--y:30.49%"></span><div class="p-r"><b class="nm">Elbow Joint 1 inch</b><span class="tag t-ok" data-t="ph.ok">Matched</span></div><div class="p-r2 n">100 × Rs 35 · Rs 3,500</div></div>
+                <div class="p-ln"><span class="crop" style="--y:36.43%"></span><div class="p-r"><b class="nm">Ceiling Fan 48 inch</b><span class="tag t-ok" data-t="ph.ok">Matched</span></div><div class="p-r2 n">12 × Rs 3,850 · Rs 46,200</div></div>
+                <div class="p-ln"><span class="crop" style="--y:42.38%"></span><div class="p-r"><b class="nm">Switch Board 8-gang</b><span class="tag t-new" data-t="ph.learned">Learned</span></div><div class="p-r2 n">30 × Rs 620 · Rs 18,600</div></div>
+                <div class="p-miss" data-t="ph.miss">Row 5 may be missing: the rows don’t add up to the bill total.</div>
+                <div class="p-ln need"><span class="crop" style="--y:54.26%"></span><div class="p-r"><b class="nm">Ball Valve ½ inch</b><span class="tag t-warn" data-t="ph.check">Check</span></div><div class="p-r2 n">40 × Rs 260 · Rs 10,400</div></div>
+              </div>
+            </div>
+            <div class="hs hs-2 p-ui">
+              <div class="done-hd">
+                <svg class="done-tick" viewBox="0 0 52 52"><circle pathLength="1" cx="26" cy="26" r="23"/><path pathLength="1" d="M15 27l8 8 15-17"/></svg>
+                <b data-t="how.done">Stock updated</b>
+              </div>
+              <div class="stk"><b class="nm">Ceiling Fan 48 inch</b><span class="chg n"><s>12</s><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>24</span></div>
+              <div class="stk"><b class="nm">Elbow Joint 1 inch</b><span class="chg n"><s>140</s><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>240</span></div>
+              <div class="stk"><b class="nm">Switch Board 8-gang</b><span class="chg n"><s>6</s><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>36</span></div>
+              <div class="stk-btns"><span class="mini-btn wa">WhatsApp</span><span class="mini-btn" data-t="how.print">Print</span></div>
+              <div class="rcpt-mini"><i></i><i class="r"></i><i></i><i class="r"></i><i></i><i class="r"></i><i></i><i class="r"></i><i class="t"></i><i class="r"></i></div>
+            </div>
+          </div>
         </div>
-        <span class="step-no n">01</span>
-        <h3 data-t="how.s1">Take a photo</h3>
-        <p data-t="how.s1p">Up to 10 pages per bill, from the phone camera. Long bills are read in overlapping strips, piece by piece.</p>
-      </li>
-      <li class="step reveal">
-        <div class="step-art art-check" aria-hidden="true">
-          <div class="mini-ln"><span class="crop" style="--y:36.43%"></span><div class="p-r"><b class="nm">Ceiling Fan 48 inch</b><span class="tag t-ok" data-t="ph.ok">Matched</span></div><div class="p-r2 n">12 × Rs 3,850</div></div>
-          <div class="mini-ln need"><span class="crop" style="--y:54.26%"></span><div class="p-r"><b class="nm">Ball Valve ½ inch</b><span class="tag t-warn" data-t="ph.check">Check</span></div><div class="p-r2 n">40 × Rs 260</div></div>
-        </div>
-        <span class="step-no n">02</span>
-        <h3 data-t="how.s2">Check every line</h3>
-        <p data-t="how.s2p">Each row sits beside its own crop of the photo. Rows the AI is unsure of, and totals that don’t add up, are marked for you.</p>
-      </li>
-      <li class="step reveal">
-        <div class="step-art art-stock" aria-hidden="true">
-          <div class="stk"><b class="nm">Ceiling Fan 48 inch</b><span class="chg n"><s>12</s><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>24</span></div>
-          <div class="stk"><b class="nm">Elbow Joint 1 inch</b><span class="chg n"><s>140</s><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>240</span></div>
-          <div class="stk-btns"><span class="mini-btn wa">WhatsApp</span><span class="mini-btn" data-t="how.print">Print</span></div>
-        </div>
-        <span class="step-no n">03</span>
-        <h3 data-t="how.s3">Stock updates</h3>
-        <p data-t="how.s3p">Confirm once. Purchases add stock, sales take it out, average cost and udhaar are worked out, and a receipt is ready to print or send on WhatsApp.</p>
-      </li>
-    </ol>
+      </div>
+    </div>
   </div>
 </section>
 
 <!-- HANDWRITING -->
-<section class="sec ink" id="handwriting" aria-labelledby="hw-h">
+<section class="sec ink" id="handwriting" aria-labelledby="hw-h" data-anim>
+  <div class="ink-bg" aria-hidden="true"><span class="blot b1"></span><span class="blot b2"></span></div>
   <div class="wrap hw">
     <div class="hw-copy">
       <p class="kicker" data-t="hw.k">Made for real handwriting</p>
@@ -156,8 +249,16 @@
     </div>
     <div class="hw-art reveal" role="img" aria-label="The handwritten words ‘8 gang board’, cut from the bill photo, are matched to the catalogue item Switch Board 8-gang and remembered for Al-Madina Sanitary. Below, a check shows the rows add up to Rs 101,200 while the bill total is Rs 146,200, so a row may be missing." data-t-aria="hw.fig">
       <div class="match">
-        <span class="crop big" style="--y:42.38%"></span>
-        <svg class="down" viewBox="0 0 24 40"><path d="M12 2v34M5 29l7 8 7-8"/></svg>
+        <div class="m-step">
+          <span class="m-k" data-t="hw.ink">On the paper</span>
+          <span class="crop big inkbleed" style="--y:42.38%"></span>
+        </div>
+        <span class="m-link"><i></i></span>
+        <div class="m-step">
+          <span class="m-k" data-t="hw.read">AI reads</span>
+          <code class="m-read ltr"><span class="typed">“8 gang board” · 30 × 620</span></code>
+        </div>
+        <span class="m-link"><i></i></span>
         <div class="cat">
           <span class="cat-k" data-t="hw.cat">In your catalogue</span>
           <b class="nm">Switch Board 8-gang</b>
@@ -177,66 +278,95 @@
 <!-- FEATURES -->
 <section class="sec" id="features" aria-labelledby="feat-h">
   <div class="wrap">
-    <p class="kicker" data-t="feat.k">Everything the counter needs</p>
-    <h2 id="feat-h" data-t="feat.h">One app, from the bill to the day’s hisaab.</h2>
-    <div class="feats">
-      <article class="feat feat-main reveal">
-        <span class="f-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 10h8M8 14h5"/></svg></span>
-        <h3 data-t="f1.h">Scan &amp; AI</h3>
-        <ul role="list">
-          <li data-t="f1.1">Photo scan of bills, up to 10 pages</li>
-          <li data-t="f1.2">Urdu, Roman Urdu and English bills</li>
-          <li data-t="f1.3">Long bills read in overlapping strips</li>
-          <li data-t="f1.4">Supplier names learned as you correct</li>
-          <li data-t="f1.5">Same-bill warning, so nothing goes in twice</li>
-          <li data-t="f1.6">Type a bill by hand when there is no photo</li>
-        </ul>
+    <div class="sec-head reveal">
+      <p class="kicker" data-t="feat.k">Everything the counter needs</p>
+      <h2 id="feat-h" data-t="feat.h">One app, from the bill to the day’s hisaab.</h2>
+    </div>
+    <div class="bento" data-anim>
+      <article class="card c-scan reveal">
+        <div class="c-art art-scan" aria-hidden="true">
+          <div class="sc-doc"><img src="img/bill-purchase.webp" width="600" height="820" alt="" loading="lazy"><span class="frame"></span><span class="sc-beam"></span></div>
+          <div class="sc-pages n"><span>1</span><span>2</span><span>…</span><span>10</span></div>
+        </div>
+        <div class="c-txt">
+          <span class="f-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 10h8M8 14h5"/></svg></span>
+          <h3 data-t="f1.h">Scan &amp; AI</h3>
+          <ul role="list">
+            <li data-t="f1.1">Photo scan of bills, up to 10 pages</li>
+            <li data-t="f1.2">Urdu, Roman Urdu and English bills</li>
+            <li data-t="f1.3">Long bills read in overlapping strips</li>
+            <li data-t="f1.4">Supplier names learned as you correct</li>
+            <li data-t="f1.5">Same-bill warning, so nothing goes in twice</li>
+            <li data-t="f1.6">Type a bill by hand when there is no photo</li>
+          </ul>
+        </div>
       </article>
-      <article class="feat reveal">
-        <span class="f-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg></span>
-        <h3 data-t="f2.h">Stock &amp; receipts</h3>
-        <ul role="list">
-          <li data-t="f2.1">Stock in and out when you confirm</li>
-          <li data-t="f2.2">Weighted average cost for every item</li>
-          <li data-t="f2.3">Low-stock alerts</li>
-          <li data-t="f2.4">Receipts for 58 / 80 mm thermal printers and A4</li>
-          <li data-t="f2.5">Receipts shared on WhatsApp</li>
-          <li data-t="f2.6">Returns, stock adjustment, opening stock from Excel</li>
-        </ul>
+      <article class="card c-stock reveal">
+        <div class="c-art art-rcpt" aria-hidden="true">
+          <div class="printer"><span class="slot"></span><span class="paper"><i></i><i></i><i></i><i class="s"></i><i></i></span></div>
+          <div class="bars"><i style="--h:.45"></i><i style="--h:.7"></i><i style="--h:.55"></i><i style="--h:.9"></i></div>
+          <span class="wa-bub"><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/></svg></span>
+        </div>
+        <div class="c-txt">
+          <span class="f-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg></span>
+          <h3 data-t="f2.h">Stock &amp; receipts</h3>
+          <ul role="list">
+            <li data-t="f2.1">Stock in and out when you confirm</li>
+            <li data-t="f2.2">Weighted average cost for every item</li>
+            <li data-t="f2.3">Low-stock alerts</li>
+            <li data-t="f2.4">Receipts for 58 / 80 mm thermal printers and A4</li>
+            <li data-t="f2.5">Receipts shared on WhatsApp</li>
+            <li data-t="f2.6">Returns, stock adjustment, opening stock from Excel</li>
+          </ul>
+        </div>
       </article>
-      <article class="feat reveal">
-        <span class="f-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4zM9 9h6M9 13h6M5 17a3 3 0 0 1 3-3"/></svg></span>
-        <h3 data-t="f3.h">Udhaar &amp; day closing</h3>
-        <ul role="list">
-          <li data-t="f3.1">Udhaar ledger for customers and suppliers</li>
-          <li data-t="f3.2">Wasooli and supplier payments</li>
-          <li data-t="f3.3">“Aaj ka hisaab” day-end closing</li>
-          <li data-t="f3.4">Galla count, with short or excess shown</li>
-          <li data-t="f3.5">Expenses</li>
-          <li data-t="f3.6">Monthly profit, and profit per product or category</li>
-        </ul>
+      <article class="card c-galla reveal">
+        <div class="c-art art-galla" aria-hidden="true">
+          <div class="drawer"><span class="note n1"></span><span class="note n2"></span><span class="note n3"></span><span class="tray"></span></div>
+          <div class="ledger"><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="c-txt">
+          <span class="f-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4zM9 9h6M9 13h6M5 17a3 3 0 0 1 3-3"/></svg></span>
+          <h3 data-t="f3.h">Udhaar &amp; day closing</h3>
+          <ul role="list">
+            <li data-t="f3.1">Udhaar ledger for customers and suppliers</li>
+            <li data-t="f3.2">Wasooli and supplier payments</li>
+            <li data-t="f3.3">“Aaj ka hisaab” day-end closing</li>
+            <li data-t="f3.4">Galla count, with short or excess shown</li>
+            <li data-t="f3.5">Expenses</li>
+            <li data-t="f3.6">Monthly profit, and profit per product or category</li>
+          </ul>
+        </div>
       </article>
-      <article class="feat reveal">
-        <span class="f-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6l8-3zM8.5 12l2.5 2.5 4.5-5"/></svg></span>
-        <h3 data-t="f4.h">Reports &amp; safety</h3>
-        <ul role="list">
-          <li data-t="f4.1">Reports to Excel and CSV</li>
-          <li data-t="f4.2">Users with roles</li>
-          <li data-t="f4.3">Daily backup</li>
-          <li data-t="f4.4">Full export: every record and every bill photo</li>
-          <li data-t="f4.5">Each shop’s data kept separate</li>
-        </ul>
+      <article class="card c-safe reveal">
+        <div class="c-art art-safe" aria-hidden="true">
+          <div class="shield"><span class="orbit"></span><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6l8-3z"/><path class="ck" pathLength="1" d="M8.5 12l2.5 2.5 4.5-5"/></svg></div>
+          <div class="files n"><span>XLSX</span><span>CSV</span><span>ZIP</span></div>
+        </div>
+        <div class="c-txt">
+          <span class="f-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6l8-3zM8.5 12l2.5 2.5 4.5-5"/></svg></span>
+          <h3 data-t="f4.h">Reports &amp; safety</h3>
+          <ul role="list">
+            <li data-t="f4.1">Reports to Excel and CSV</li>
+            <li data-t="f4.2">Users with roles</li>
+            <li data-t="f4.3">Daily backup</li>
+            <li data-t="f4.4">Full export: every record and every bill photo</li>
+            <li data-t="f4.5">Each shop’s data kept separate</li>
+          </ul>
+        </div>
       </article>
     </div>
   </div>
 </section>
 
 <!-- REAL SCREENS -->
-<section class="sec sec-tint" id="screens" aria-labelledby="scr-h">
+<section class="sec screens" id="screens" aria-labelledby="scr-h">
   <div class="wrap">
-    <p class="kicker" data-t="scr.k">Real screens</p>
-    <h2 id="scr-h" data-t="scr.h">These are real screens from the app.</h2>
-    <p class="sub" data-t="scr.note">From a demo shop with made-up names and amounts.</p>
+    <div class="sec-head center reveal">
+      <p class="kicker" data-t="scr.k">Real screens</p>
+      <h2 id="scr-h" data-t="scr.h">These are real screens from the app.</h2>
+      <p class="sub demo-badge" data-t="scr.note">From a demo shop with made-up names and amounts.</p>
+    </div>
   </div>
   <div class="shots" tabindex="0" role="region" aria-label="Screens from the app, scroll sideways" data-t-aria="scr.region">
     <figure class="shot"><div class="shot-ph"><img src="img/screen-home.webp" width="400" height="860" loading="lazy" alt="Home screen: stock value, purchases and sales today, today’s net profit, buttons to photo a purchase or sale bill, and the low-stock list." data-t-alt="scr.a1"></div><figcaption data-t="scr.c1">Home: stock value, today’s buying and selling, low stock</figcaption></figure>
@@ -245,27 +375,34 @@
     <figure class="shot"><div class="shot-ph"><img src="img/screen-ai-ur.webp" width="400" height="860" loading="lazy" alt="AI bill reading settings in Urdu: consent to send photos, who reads the bills, and save." data-t-alt="scr.a4"></div><figcaption data-t="scr.c4">AI settings in Urdu: the owner decides</figcaption></figure>
     <figure class="shot"><div class="shot-ph"><img src="img/screen-more-ur.webp" width="400" height="860" loading="lazy" alt="The More screen in Urdu: reports to Excel and CSV, and the data safety card with full download." data-t-alt="scr.a5"></div><figcaption data-t="scr.c5">Reports and data safety, in Urdu</figcaption></figure>
   </div>
+  <div class="shots-nav">
+    <button type="button" class="sn-btn" id="shotPrev" aria-label="Previous screen" data-t-aria="scr.prev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <span class="sn-dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+    <button type="button" class="sn-btn" id="shotNext" aria-label="Next screen" data-t-aria="scr.next"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+  </div>
 </section>
 
 <!-- ROLES -->
 <section class="sec" id="roles" aria-labelledby="roles-h">
   <div class="wrap">
-    <p class="kicker" data-t="roles.k">Roles</p>
-    <h2 id="roles-h" data-t="roles.h">Everyone at the counter sees only their part.</h2>
+    <div class="sec-head reveal">
+      <p class="kicker" data-t="roles.k">Roles</p>
+      <h2 id="roles-h" data-t="roles.h">Everyone at the counter sees only their part.</h2>
+    </div>
     <div class="roles">
-      <article class="role reveal"><span class="r-badge" aria-hidden="true">O</span><h3 data-t="r1.h">Owner</h3><p data-t="r1.p">Everything: prices, profit, cancelling bills, users, settings and the full data export.</p></article>
-      <article class="role reveal"><span class="r-badge" aria-hidden="true">S</span><h3 data-t="r2.h">Salesman</h3><p data-t="r2.p">Sale bills and receipts, wasooli from customers, sales returns, small cash expenses and the day’s closing.</p></article>
-      <article class="role reveal"><span class="r-badge" aria-hidden="true">K</span><h3 data-t="r3.h">Storekeeper</h3><p data-t="r3.p">Purchase bills from suppliers, stock in and purchase returns.</p></article>
-      <article class="role reveal"><span class="r-badge" aria-hidden="true">A</span><h3 data-t="r4.h">Accountant</h3><p data-t="r4.p">Ledgers, day summaries, profit and reports, without touching stock.</p></article>
+      <article class="role card reveal"><span class="r-badge" aria-hidden="true">O</span><h3 data-t="r1.h">Owner</h3><p data-t="r1.p">Everything: prices, profit, cancelling bills, users, settings and the full data export.</p></article>
+      <article class="role card reveal"><span class="r-badge" aria-hidden="true">S</span><h3 data-t="r2.h">Salesman</h3><p data-t="r2.p">Sale bills and receipts, wasooli from customers, sales returns, small cash expenses and the day’s closing.</p></article>
+      <article class="role card reveal"><span class="r-badge" aria-hidden="true">K</span><h3 data-t="r3.h">Storekeeper</h3><p data-t="r3.p">Purchase bills from suppliers, stock in and purchase returns.</p></article>
+      <article class="role card reveal"><span class="r-badge" aria-hidden="true">A</span><h3 data-t="r4.h">Accountant</h3><p data-t="r4.p">Ledgers, day summaries, profit and reports, without touching stock.</p></article>
     </div>
     <p class="sub" data-t="roles.note">Stock value and profit are shown only to the owner and the accountant.</p>
   </div>
 </section>
 
 <!-- LANGUAGE + PHONE -->
-<section class="sec sec-tint" id="phone" aria-labelledby="lang-h">
-  <div class="wrap duo">
-    <article class="panel reveal">
+<section class="sec" id="phone" aria-labelledby="lang-h">
+  <div class="wrap duo" data-anim>
+    <article class="panel card reveal">
       <p class="kicker" data-t="lang.k">Urdu or English</p>
       <h2 id="lang-h" data-t="lang.h">Your language, the right way round.</h2>
       <p data-t="lang.p">Full Urdu in Nastaliq, written right to left, or English. Switch any time. Amounts always use Western digits, the way they are written on a bill.</p>
@@ -274,7 +411,7 @@
         <div class="bi-card" dir="rtl" lang="ur"><span class="bi-l ur">آج کی سیل</span><b class="n">Rs 47,775</b></div>
       </div>
     </article>
-    <article class="panel reveal">
+    <article class="panel card reveal">
       <p class="kicker" data-t="ph2.k">Works on your phone</p>
       <h2 data-t="ph2.h">Install it like an app. Keep going when the signal drops.</h2>
       <p data-t="ph2.p">Add it to the home screen straight from the browser, no app store needed. If the internet goes while you scan, the bill waits on the phone and is sent when you are back online.</p>
@@ -289,40 +426,45 @@
 <!-- DATA SAFETY -->
 <section class="sec" id="safety" aria-labelledby="safe-h">
   <div class="wrap">
-    <p class="kicker" data-t="safe.k">Data safety</p>
-    <h2 id="safe-h" data-t="safe.h">Your shop’s records stay yours.</h2>
+    <div class="sec-head reveal">
+      <p class="kicker" data-t="safe.k">Data safety</p>
+      <h2 id="safe-h" data-t="safe.h">Your shop’s records stay yours.</h2>
+    </div>
     <div class="safe">
-      <div class="safe-i reveal"><h3 data-t="s1.h">Daily backup</h3><p data-t="s1.p">The whole database is backed up every night, and earlier copies are kept.</p></div>
-      <div class="safe-i reveal"><h3 data-t="s2.h">Full export, any time</h3><p data-t="s2.p">The owner can download every record as Excel, with every bill photo, in one zip file.</p></div>
-      <div class="safe-i reveal"><h3 data-t="s3.h">Each shop kept apart</h3><p data-t="s3.p">Every shop’s data is separated inside the database itself, not only on the screen.</p></div>
-      <div class="safe-i reveal"><h3 data-t="s4.h">You decide about AI</h3><p data-t="s4.p">Bill photos go to an AI service only after the owner agrees. AI can be switched off and bills typed in instead.</p></div>
+      <div class="safe-i reveal"><span class="s-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9M12 7v5l3 2M21 3v5h-5"/></svg></span><h3 data-t="s1.h">Daily backup</h3><p data-t="s1.p">The whole database is backed up every night, and earlier copies are kept.</p></div>
+      <div class="safe-i reveal"><span class="s-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></span><h3 data-t="s2.h">Full export, any time</h3><p data-t="s2.p">The owner can download every record as Excel, with every bill photo, in one zip file.</p></div>
+      <div class="safe-i reveal"><span class="s-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><h3 data-t="s3.h">Each shop kept apart</h3><p data-t="s3.p">Every shop’s data is separated inside the database itself, not only on the screen.</p></div>
+      <div class="safe-i reveal"><span class="s-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h4l2-6 3 12 2-6h3"/></svg></span><h3 data-t="s4.h">You decide about AI</h3><p data-t="s4.p">Bill photos go to an AI service only after the owner agrees. AI can be switched off and bills typed in instead.</p></div>
     </div>
   </div>
 </section>
 
 <!-- FAQ -->
-<section class="sec sec-tint" id="faq" aria-labelledby="faq-h">
+<section class="sec" id="faq" aria-labelledby="faq-h">
   <div class="wrap narrow">
-    <p class="kicker" data-t="faq.k">Questions</p>
-    <h2 id="faq-h" data-t="faq.h">Straight answers.</h2>
+    <div class="sec-head center reveal">
+      <p class="kicker" data-t="faq.k">Questions</p>
+      <h2 id="faq-h" data-t="faq.h">Straight answers.</h2>
+    </div>
     <div class="faq">
-      <details><summary data-t="q1">Is the AI always right?</summary><p data-t="a1">No. Messy handwriting, folded paper or poor light can fool it. That is why every row is shown beside its photo, unsure rows and totals that don’t add up are marked, and nothing reaches your stock until you confirm.</p></details>
-      <details><summary data-t="q2">What do I need to start?</summary><p data-t="a2">A smartphone with a browser and internet. A thermal printer (58 or 80 mm) is optional: receipts can also be printed on A4 or sent on WhatsApp.</p></details>
-      <details><summary data-t="q3">What happens when the internet drops?</summary><p data-t="a3">A bill you scan is kept on the phone and sent automatically when the connection returns. Reading the bill and updating stock happen once it reaches the server.</p></details>
-      <details><summary data-t="q4">Is the receipt an FBR tax invoice?</summary><p data-t="a4">No. The receipt is for your customer and your own records, and it says on it that it is not an FBR-verified tax invoice. The app is not connected to FBR.</p></details>
-      <details><summary data-t="q5">Can I bring in the stock I already have?</summary><p data-t="a5">Yes. Fill the Excel or CSV template with items, quantities and costs. The app checks every row and shows the mistakes before anything is imported.</p></details>
-      <details><summary data-t="q6">Who can see my profit and my data?</summary><p data-t="a6">Inside your shop, only the people you give a role, and profit only to the owner and accountant. Your shop’s data is kept apart from other shops in the database, backed up daily, and you can export all of it.</p></details>
+      <details class="reveal"><summary data-t="q1">Is the AI always right?</summary><div class="faq-a"><p data-t="a1">No. Messy handwriting, folded paper or poor light can fool it. That is why every row is shown beside its photo, unsure rows and totals that don’t add up are marked, and nothing reaches your stock until you confirm.</p></div></details>
+      <details class="reveal"><summary data-t="q2">What do I need to start?</summary><div class="faq-a"><p data-t="a2">A smartphone with a browser and internet. A thermal printer (58 or 80 mm) is optional: receipts can also be printed on A4 or sent on WhatsApp.</p></div></details>
+      <details class="reveal"><summary data-t="q3">What happens when the internet drops?</summary><div class="faq-a"><p data-t="a3">A bill you scan is kept on the phone and sent automatically when the connection returns. Reading the bill and updating stock happen once it reaches the server.</p></div></details>
+      <details class="reveal"><summary data-t="q4">Is the receipt an FBR tax invoice?</summary><div class="faq-a"><p data-t="a4">No. The receipt is for your customer and your own records, and it says on it that it is not an FBR-verified tax invoice. The app is not connected to FBR.</p></div></details>
+      <details class="reveal"><summary data-t="q5">Can I bring in the stock I already have?</summary><div class="faq-a"><p data-t="a5">Yes. Fill the Excel or CSV template with items, quantities and costs. The app checks every row and shows the mistakes before anything is imported.</p></div></details>
+      <details class="reveal"><summary data-t="q6">Who can see my profit and my data?</summary><div class="faq-a"><p data-t="a6">Inside your shop, only the people you give a role, and profit only to the owner and accountant. Your shop’s data is kept apart from other shops in the database, backed up daily, and you can export all of it.</p></div></details>
     </div>
   </div>
 </section>
 
 <!-- CONTACT -->
-<section class="sec" id="contact" aria-labelledby="ct-h">
+<section class="sec cta-sec" id="contact" aria-labelledby="ct-h">
   <div class="wrap">
-    <div class="contact reveal">
+    <div class="contact reveal" data-anim>
+      <div class="cta-bg" aria-hidden="true"><span class="aur a1"></span><span class="aur a2"></span><span class="grain"></span></div>
       <div class="ct-copy">
         <p class="kicker" data-t="ct.k">Request a demo</p>
-        <h2 id="ct-h" data-t="ct.h">Want to see it at your counter?</h2>
+        <h2 id="ct-h" data-t="ct.h">See it working at your own counter.</h2>
         <p data-t="ct.p">Get in touch with Quantum Synergy Solutions for a demo. We will go through a purchase bill, a sale and the day’s closing with you.</p>
       </div>
       <div class="ct-box">
