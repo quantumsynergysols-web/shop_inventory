@@ -37,6 +37,28 @@ async function prepare(file: File): Promise<Page> {
   return { blob, url: URL.createObjectURL(blob), dark: sum / Math.max(n, 1) < 60 };
 }
 
+/** Re-encodes a page as JPEG no larger than maxSide pixels. */
+async function shrink(blob: Blob, maxSide: number, quality: number): Promise<Blob> {
+  const bmp = await createImageBitmap(blob);
+  const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bmp.width * scale);
+  canvas.height = Math.round(bmp.height * scale);
+  canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  return new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), 'image/jpeg', quality));
+}
+
+/** One upload must stay under the host's request limit (4.5 MB on Vercel): shrink step by step until it fits. */
+const UPLOAD_BUDGET = 4_000_000;
+async function fitUpload(blobs: Blob[]): Promise<Blob[]> {
+  let out = blobs;
+  for (const [side, q] of [[2000, 0.75], [1800, 0.68], [1600, 0.62], [1400, 0.55]] as const) {
+    if (out.reduce((s, b) => s + b.size, 0) <= UPLOAD_BUDGET) return out;
+    out = await Promise.all(blobs.map((b) => shrink(b, side, q)));
+  }
+  return out;
+}
+
 export function ScanNew({ type }: { type: 'SALE' | 'PURCHASE' }) {
   const { t } = useT();
   const { toast } = useApp();
@@ -55,7 +77,8 @@ export function ScanNew({ type }: { type: 'SALE' | 'PURCHASE' }) {
 
   async function upload() {
     setBusy(true);
-    const scan: QueuedScan = { clientId: newKey(), type, at: Date.now(), pages: pages.map((p, i) => ({ blob: p.blob, name: `page-${i + 1}.${p.blob.type === 'image/png' ? 'png' : 'jpg'}` })) };
+    const blobs = await fitUpload(pages.map((p) => p.blob));
+    const scan: QueuedScan = { clientId: newKey(), type, at: Date.now(), pages: blobs.map((b, i) => ({ blob: b, name: `page-${i + 1}.${b.type === 'image/png' ? 'png' : 'jpg'}` })) };
     try {
       const res = await request('/scans', { method: 'POST', body: toForm(scan) });
       const s = await res.json();
@@ -247,7 +270,7 @@ function Review({ scan, onChange }: { scan: any; onChange: (s: any) => void }) {
       <main className="body" style={{ paddingBottom: 170 }}>
         {!scan.aiReads && (
           <div className="banner info">
-            {scan.flags.includes('AI_NO_CONSENT') ? t.aiNoConsent : scan.flags.includes('AI_QUOTA_REACHED') ? t.aiQuota : scan.flags.includes('AI_KEY_UNREADABLE') ? t.aiKeyBad : scan.flags.includes('AI_NOT_CONFIGURED') ? t.aiNotConfigured : scan.lines.length ? t.demoMode : t.manualMode}
+            {scan.flags.includes('AI_NO_CONSENT') ? t.aiNoConsent : scan.flags.includes('AI_QUOTA_REACHED') ? t.aiQuota : scan.flags.includes('AI_KEY_UNREADABLE') ? t.aiKeyBad : scan.lines.length ? t.demoMode : scan.flags.includes('AI_NOT_CONFIGURED') ? t.aiNotConfigured : t.manualMode}
           </div>
         )}
         {scan.flags.includes('ROWS_MAY_BE_MISSING') && <div className="banner bad">{t.missingRows(scan.missingSerials.join(', '))}</div>}

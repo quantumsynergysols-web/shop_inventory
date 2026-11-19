@@ -29,8 +29,8 @@ function loginLimiter(limit: number) {
 export async function createApp(config: AppConfig, overrides: AppOverrides = {}, options: { quiet?: boolean } = {}): Promise<INestApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule.create(config, overrides), options.quiet ? { logger: false } : {});
   app.setGlobalPrefix('api');
-  // Behind Caddy on the same machine: the client's IP comes from X-Forwarded-For
-  app.set('trust proxy', 'loopback');
+  // The client's IP comes from X-Forwarded-For: set by Caddy on the same machine, or by Vercel's edge
+  app.set('trust proxy', process.env.VERCEL ? true : 'loopback');
   // A long multi-page bill's autosave is larger than Express's 100 KB default
   app.useBodyParser('json', { limit: '2mb' });
   app.use('/api/auth/login', loginLimiter(config.LOGIN_LIMIT_PER_IP));

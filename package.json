@@ -17,6 +17,7 @@
     "typecheck": "tsc -p packages/domain/tsconfig.json && npm run typecheck --workspace @erp/api",
     "db:validate": "npm run db:validate --workspace @erp/api",
     "build:all": "npm run build && npm run build --workspace @erp/web",
+    "build:vercel": "node scripts/vercel-out.mjs",
     "demo:bills": "node apps/api/scripts/make-demo-bills.mjs",
     "demo:record": "node scripts/record-demo.mjs",
     "demo:record:en": "node scripts/record-demo.mjs --en"

@@ -11,5 +11,5 @@ createRoot(document.getElementById('root')!).render(
 
 // Installable PWA with the app shell cached for weak connections (NFR-REL-03).
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  addEventListener('load', () => navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {}));
 }

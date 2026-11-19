@@ -17,3 +17,9 @@ docs/demo/*.webm
 docs/demo/*.mp4
 
 apps/api/backups/
+
+vercel-out/
+.vercel/
+
+.vercel
+.env*

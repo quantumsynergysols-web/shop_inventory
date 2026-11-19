@@ -23,6 +23,7 @@ import { big, dec, milli, paisa } from '../common/convert.js';
 import { DocumentsService, type DocumentView } from '../documents/documents.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { FILE_STORAGE, type FileStorage } from '../storage/storage.js';
+import { waitUntil } from '@vercel/functions';
 import { AiRouter } from './ai/ai-router.js';
 import { readPage } from './ai/read-page.js';
 
@@ -115,15 +116,22 @@ export class ScansService implements OnApplicationBootstrap, OnModuleDestroy {
    * than 5 minutes are marked FAILED; the user retries or continues manually (FR-AI-07).
    */
   async onApplicationBootstrap(): Promise<void> {
-    const r = await this.db.scan
-      .updateMany({ where: { status: 'PROCESSING', updatedAt: { lt: new Date(Date.now() - 5 * 60_000) } }, data: { status: 'FAILED', failureReason: 'Reading was interrupted (server restarted). Retry or continue manually.' } })
-      .catch(() => ({ count: 0 }));
-    if (r.count) this.log.warn(`marked ${r.count} interrupted scan(s) as failed`);
+    await this.failInterrupted().catch(() => 0);
     // FR-AI-16: remove photos older than each shop's retention period, at start and then daily
     const run = () => void this.removeExpiredPhotos().catch((e) => this.log.error(`photo cleanup failed: ${(e as Error).message}`));
     this.cleanupTimer = setInterval(run, 24 * 60 * 60_000);
     this.cleanupTimer.unref();
     setTimeout(run, 5 * 60_000).unref();
+  }
+
+  /** Scans left PROCESSING for more than 5 minutes were interrupted; the user retries (FR-AI-07). */
+  async failInterrupted(): Promise<number> {
+    const r = await this.db.scan.updateMany({
+      where: { status: 'PROCESSING', updatedAt: { lt: new Date(Date.now() - 5 * 60_000) } },
+      data: { status: 'FAILED', failureReason: 'Reading was interrupted (server restarted). Retry or continue manually.' },
+    });
+    if (r.count) this.log.warn(`marked ${r.count} interrupted scan(s) as failed`);
+    return r.count;
   }
 
   onModuleDestroy(): void {
@@ -191,6 +199,8 @@ export class ScansService implements OnApplicationBootstrap, OnModuleDestroy {
     // In-process for now; a pg-boss queue replaces this so work survives restarts (FR-AI-06).
     const p = this.process(id).finally(() => this.running.delete(id));
     this.running.set(id, p);
+    // On Vercel the function would freeze after the response; waitUntil keeps it alive until reading ends
+    if (process.env.VERCEL) waitUntil(p);
   }
 
   /** FR-AI-01..09, FR-AI-12/13: read every page in parallel, merge, check, match. */

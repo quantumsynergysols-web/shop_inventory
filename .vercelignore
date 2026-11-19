@@ -1,0 +1,19 @@
+# Never upload local secrets or data to Vercel
+.env
+.env.*
+**/.env
+**/.env.*
+!apps/api/.env.example
+apps/api/prisma/setup-dev-db.sql
+apps/api/storage/
+apps/api/backups/
+**/*.dump
+# Large or generated files (Vercel builds its own)
+node_modules/
+**/node_modules/
+**/dist/
+vercel-out/
+docs/demo/
+*.mp4
+*.webm
+.git/

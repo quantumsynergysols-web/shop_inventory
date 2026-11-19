@@ -1,6 +1,7 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { Inject, Injectable } from '@nestjs/common';
+import { del, get, put } from '@vercel/blob';
 import { APP_CONFIG, type AppConfig } from '../config.js';
 
 /**
@@ -44,4 +45,35 @@ export class LocalDiskStorage implements FileStorage {
   async delete(key: string): Promise<void> {
     await rm(this.path(key), { force: true });
   }
+}
+
+/**
+ * Vercel Blob (private store) for serverless hosting, where the local disk does not survive between
+ * requests. Photos are private: they are read back by the API with the store token, never by URL.
+ */
+export class VercelBlobStorage implements FileStorage {
+  constructor(private readonly token: string) {}
+
+  async put(key: string, bytes: Uint8Array): Promise<void> {
+    await put(key, Buffer.from(bytes), { access: 'private', addRandomSuffix: false, allowOverwrite: true, token: this.token });
+  }
+
+  async get(key: string): Promise<Buffer> {
+    const r = await get(key, { access: 'private', token: this.token });
+    if (!r || r.statusCode !== 200) throw Object.assign(new Error(`file not found: ${key}`), { code: 'ENOENT' });
+    return Buffer.from(await new Response(r.stream).arrayBuffer());
+  }
+
+  async delete(key: string): Promise<void> {
+    await del(key, { token: this.token });
+  }
+}
+
+/** Local disk by default; Vercel Blob when STORAGE_DRIVER=blob. */
+export function storageFor(config: AppConfig): FileStorage {
+  if (config.STORAGE_DRIVER === 'blob') {
+    if (!config.BLOB_READ_WRITE_TOKEN) throw new Error('STORAGE_DRIVER=blob needs BLOB_READ_WRITE_TOKEN');
+    return new VercelBlobStorage(config.BLOB_READ_WRITE_TOKEN);
+  }
+  return new LocalDiskStorage(config);
 }

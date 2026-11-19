@@ -17,6 +17,11 @@ const schema = z.object({
   LOCKOUT_MINUTES: z.coerce.number().int().positive().default(15),
   /** Bill photos and receipts (local disk in development; S3/R2 later) */
   STORAGE_DIR: z.string().default('storage'),
+  /** "blob" = Vercel Blob (serverless hosting); "disk" = STORAGE_DIR */
+  STORAGE_DRIVER: z.enum(['disk', 'blob']).default('disk'),
+  BLOB_READ_WRITE_TOKEN: z.string().default(''),
+  /** Vercel Cron calls /api/cron/daily with this as a Bearer token; empty = the endpoint is off */
+  CRON_SECRET: z.string().default(''),
   /** Kept for older .env files; the reader is chosen per shop in AI settings (FR-SET-02) */
   AI_PROVIDER: z.enum(['demo']).default('demo'),
   /** FR-AI-15: the QSSols-hosted reader shops use by default; "none" = demo/manual until a key is set */

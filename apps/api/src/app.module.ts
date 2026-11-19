@@ -19,7 +19,7 @@ import { ProductsService } from './products/products.service.js';
 import { AI_PROVIDER, DemoAiProvider } from './scans/ai-provider.js';
 import { ScansController } from './scans/scans.controller.js';
 import { ScansService } from './scans/scans.service.js';
-import { FILE_STORAGE, LocalDiskStorage } from './storage/storage.js';
+import { FILE_STORAGE, storageFor } from './storage/storage.js';
 import { DashboardController } from './dashboard/dashboard.controller.js';
 import { DayController } from './day/day.controller.js';
 import { DayService } from './day/day.service.js';
@@ -32,6 +32,7 @@ import { BackupService } from './backup/backup.service.js';
 import { ExportService } from './backup/export.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { AiRouter } from './scans/ai/ai-router.js';
+import { CronController } from './scans/cron.controller.js';
 import { AiSettingsController } from './scans/ai/ai-settings.controller.js';
 import { ShopContextInterceptor } from './prisma/shop-context.js';
 
@@ -62,7 +63,7 @@ export class AppModule {
       BackupService,
       ScansService,
       DayService,
-      { provide: FILE_STORAGE, useClass: LocalDiskStorage },
+      { provide: FILE_STORAGE, useFactory: storageFor, inject: [APP_CONFIG] },
       DemoAiProvider,
       AiRouter,
       { provide: AI_PROVIDER, useExisting: DemoAiProvider },
@@ -73,7 +74,7 @@ export class AppModule {
     return {
       module: AppModule,
       imports: [JwtModule.register({ secret: config.JWT_SECRET, signOptions: { algorithm: 'HS256' }, verifyOptions: { algorithms: ['HS256'] } })],
-      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, StockDocsController, ScansController, DashboardController, DayController, ReportsController, UsersController, BackupController, AiSettingsController],
+      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, StockDocsController, ScansController, DashboardController, DayController, ReportsController, UsersController, BackupController, AiSettingsController, CronController],
       providers,
     };
   }
