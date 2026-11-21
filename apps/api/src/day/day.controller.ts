@@ -34,6 +34,12 @@ export class DayController {
     return this.day.close(u, body);
   }
 
+  /** FR-CLS-04: owner, only before the first day is closed */
+  @Post('day/starting-cash')
+  startingCash(@CurrentUser() u: AuthUser, @Body(new ZodPipe(z.object({ amountPaisa: z.number().int().min(0).max(1e12) }))) body: { amountPaisa: number }) {
+    return this.day.setStartingCash(u, body.amountPaisa);
+  }
+
   @Post('day/reopen')
   reopen(@CurrentUser() u: AuthUser, @Body(new ZodPipe(z.object({ date: ymd, reason: z.string().trim().min(3).max(300) }))) body: { date: string; reason: string }) {
     return this.day.reopen(u, body.date, body.reason);

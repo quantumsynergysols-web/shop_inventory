@@ -17,6 +17,8 @@ export function Day({ date: day }: { date?: string } = {}) {
   const [addExp, setAddExp] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<number | null>(null);
+  // FR-CLS-04: the cash already in the galla when the shop started (only before the first closing)
+  const [startEdit, setStartEdit] = useState<string | null>(null);
 
   if (error) return <><Top title={t.today} backTo="/home" /><div className="body"><ErrorBox error={error} retry={reload} /></div></>;
   if (!data) return <Loading />;
@@ -42,6 +44,22 @@ export function Day({ date: day }: { date?: string } = {}) {
   const diff = countedPaisa == null ? null : countedPaisa - s.expectedCashPaisa;
   const needNote = diff != null && Math.abs(diff) > d.noteLimitPaisa;
   const closed = d.status === 'CLOSED';
+
+  async function saveStartingCash() {
+    const amount = toPaisa(startEdit ?? '');
+    if (amount == null) return;
+    setBusy(true);
+    try {
+      await post('/day/starting-cash', { amountPaisa: amount });
+      toast(t.saved);
+      setStartEdit(null);
+      reload();
+    } catch (e) {
+      toast((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function close(force = false) {
     setBusy(true);
@@ -124,7 +142,28 @@ export function Day({ date: day }: { date?: string } = {}) {
 
         <div className="card">
           <h2 className="h3">{t.galla}</h2>
-          <div className="rw"><span>{t.opening}</span><span className="n">{rs(s.openingCashPaisa)}</span></div>
+          <div className="rw">
+            <span>{t.opening}</span>
+            <span className="n">
+              {rs(s.openingCashPaisa)}
+              {d.canSetStartingCash && startEdit == null && !closed && (
+                <button className="link" style={{ marginInlineStart: 10 }} onClick={() => setStartEdit(String((d.startingCashPaisa ?? 0) / 100))}>{t.setStartingCash}</button>
+              )}
+            </span>
+          </div>
+          {startEdit != null && (
+            <div className="card" style={{ display: 'grid', gap: 8, margin: '6px 0' }}>
+              <label className="f">
+                <span>{t.startingCashQ}</span>
+                <input className="in num" inputMode="decimal" autoFocus value={startEdit} onChange={(e) => setStartEdit(e.target.value)} />
+              </label>
+              <div className="label">{t.startingCashHint}</div>
+              <div className="btns2">
+                <button className="cta sec" onClick={() => setStartEdit(null)}>{t.cancel}</button>
+                <button className="cta" disabled={busy || toPaisa(startEdit) == null} onClick={saveStartingCash}>{t.save}</button>
+              </div>
+            </div>
+          )}
           <div className="rw"><span>+ {t.plusCash}</span><span className="n">{rs(s.salesCashPaisa)}</span></div>
           <div className="rw"><span>+ {t.plusWas}</span><span className="n">{rs(s.wasooliCashPaisa)}</span></div>
           <div className="rw"><span>− {t.minusExp}</span><span className="n">{rs(s.expensesCashPaisa)}</span></div>

@@ -33,12 +33,13 @@ export class DayService {
    */
   async input(shopId: string, ymd: string): Promise<DayInput> {
     const day = dateOnly(ymd);
-    const [docs, voids, standalone, expenses, prev] = await Promise.all([
+    const [docs, voids, standalone, expenses, prev, shop] = await Promise.all([
       this.db.document.findMany({ where: { shopId, docDate: day, kind: { in: ['SALE', 'PURCHASE', 'SALES_RETURN', 'PURCHASE_RETURN'] } }, include: { payments: true, voidedBy: { select: { docDate: true } } } }),
       this.db.document.findMany({ where: { shopId, docDate: day, kind: 'VOID' }, include: { payments: true, voidsDoc: true } }),
       this.db.payment.findMany({ where: { shopId, paidOn: day, documentId: null } }),
       this.db.expense.findMany({ where: { shopId, businessDate: day } }),
       this.db.dayClosing.findFirst({ where: { shopId, businessDate: { lt: day }, countedCashPaisa: { not: null } }, orderBy: { businessDate: 'desc' } }),
+      this.db.shop.findUniqueOrThrow({ where: { id: shopId }, select: { settings: true } }),
     ]);
     const voidedSameDay = (d: (typeof docs)[number]) => !!d.voidedBy && d.voidedBy.docDate.getTime() === day.getTime();
 
@@ -64,7 +65,8 @@ export class DayService {
     for (const r of docs.filter((x) => x.kind === 'PURCHASE_RETURN')) supplierPayments.push(...r.payments.map((p) => entry(p, -1)));
     for (const p of standalone) if (p.direction === 'PAID') supplierPayments.push(entry(p));
     return {
-      openingCashPaisa: prev?.countedCashPaisa == null ? 0 : paisa(prev.countedCashPaisa),
+      // FR-CLS-04: yesterday's counted cash; before the first closing, the cash the shop started with
+      openingCashPaisa: prev?.countedCashPaisa == null ? readSettings(shop.settings).startingCashPaisa : paisa(prev.countedCashPaisa),
       sales,
       salesReturns,
       expenses: expenses.map((e) => ({ mode: e.paidFrom, amountPaisa: paisa(e.amountPaisa) })),
@@ -102,6 +104,9 @@ export class DayService {
         : null,
       pendingScans,
       noteLimitPaisa: settings.closingNoteLimitPaisa,
+      // Until the first day is closed, the owner can say how much cash was in the galla at the start
+      startingCashPaisa: settings.startingCashPaisa,
+      canSetStartingCash: user.role === 'OWNER' && !(await this.db.dayClosing.count({ where: { shopId: user.shopId, countedCashPaisa: { not: null } } })),
       canClose: canCloseDay(user.role, settings),
     };
   }
@@ -205,6 +210,21 @@ export class DayService {
       return c;
     });
     return { date: ymd, summary, ...result, status: closing.status };
+  }
+
+  /**
+   * FR-CLS-04: cash already in the galla when the shop starts using the app. It is the opening cash
+   * of every day until the first closing; after that each day opens with the previous counted cash.
+   */
+  async setStartingCash(user: AuthUser, amountPaisa: Paisa) {
+    if (user.role !== 'OWNER') throw new ForbiddenException('Only the owner can set the starting cash');
+    if (await this.db.dayClosing.count({ where: { shopId: user.shopId, countedCashPaisa: { not: null } } }))
+      throw new ConflictException('A day is already closed; opening cash now comes from the last counted cash');
+    const shop = await this.db.shop.findUniqueOrThrow({ where: { id: user.shopId } });
+    const before = readSettings(shop.settings).startingCashPaisa;
+    await this.db.shop.update({ where: { id: user.shopId }, data: { settings: { ...(shop.settings as object), startingCashPaisa: amountPaisa } } });
+    await this.db.auditLog.create({ data: { shopId: user.shopId, userId: user.userId, action: 'day.starting_cash', entity: 'shop', entityId: user.shopId, before: { startingCashPaisa: before }, after: { startingCashPaisa: amountPaisa } } });
+    return { startingCashPaisa: amountPaisa };
   }
 
   /** FR-CLS-05: only the owner reopens a closed day, with a reason; written to the audit log. */

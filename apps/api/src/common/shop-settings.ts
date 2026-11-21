@@ -8,6 +8,8 @@ export const shopSettingsSchema = z.object({
   salesmanMayCloseDay: z.boolean().default(false),
   salesmanExpenseLimitPaisa: z.number().int().min(0).default(100_000),
   closingNoteLimitPaisa: z.number().int().min(0).default(50_000),
+  /** FR-CLS-04: cash already in the galla when the shop started; opening cash until the first day is closed */
+  startingCashPaisa: z.number().int().min(0).default(0),
 });
 
 export type ShopSettings = z.infer<typeof shopSettingsSchema>;
