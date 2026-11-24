@@ -8,7 +8,9 @@ import { Doc } from './screens/Doc';
 import { Home } from './screens/Home';
 import { LedgerList, PartyView } from './screens/Ledger';
 import { Login } from './screens/Login';
+import { PlatformAdmin } from './screens/PlatformAdmin';
 import { Setup } from './screens/Setup';
+import { Signup } from './screens/Signup';
 import { Manual } from './screens/Manual';
 import { Month, More, Settings, Users } from './screens/More';
 import { ScanNew, ScanView } from './screens/Scan';
@@ -65,6 +67,9 @@ export function App() {
   // FR-SCAN-07: scans waiting on this phone for the internet
   const [queued, setQueued] = useState(0);
   const [needsSetup, setNeedsSetup] = useState(false);
+  // Online version: new shops can ask for an account (approved by QSSols)
+  const [signupOn, setSignupOn] = useState(false);
+  const [signingUp, setSigningUp] = useState(false);
   const route = useRoute();
 
   const setLang = (l: Lang) => {
@@ -83,6 +88,7 @@ export function App() {
     resume().then(setMe).catch(() => setMe(null));
     // Desktop first run: no shop yet, so show the setup screen instead of the login
     fetch('/api/setup').then((r) => (r.ok ? r.json() : null)).then((j) => setNeedsSetup(!!j?.needed)).catch(() => setNeedsSetup(false));
+    fetch('/api/signup').then((r) => (r.ok ? r.json() : null)).then((j) => setSignupOn(!!j?.enabled)).catch(() => setSignupOn(false));
   }, []);
 
   useEffect(() => {
@@ -95,10 +101,18 @@ export function App() {
   return (
     <LangContext.Provider value={langValue}>
       <div className="app" dir={lang === 'ur' ? 'rtl' : 'ltr'} lang={lang}>
-        {me === undefined ? (
+        {route.parts[0] === 'qssols-admin' ? (
+          <PlatformAdmin />
+        ) : me === undefined ? (
           <Loading />
         ) : me === null ? (
-          needsSetup ? <Setup onDone={(m) => { setNeedsSetup(false); setMe(m); }} /> : <Login onDone={setMe} />
+          needsSetup ? (
+            <Setup onDone={(m) => { setNeedsSetup(false); setMe(m); }} />
+          ) : signingUp ? (
+            <Signup onBack={() => setSigningUp(false)} />
+          ) : (
+            <Login onDone={setMe} onSignup={signupOn ? () => setSigningUp(true) : undefined} />
+          )
         ) : (
           <AppCtx.Provider value={{ me, toast, setMe }}>
             {queued > 0 && <div className="banner warn" role="status" style={{ margin: '8px 16px 0' }}>{DICTS[lang].queueWaiting(queued)}</div>}

@@ -7,18 +7,19 @@ import type { AuthStore, StoredSession, StoredUser } from './auth.store.js';
 export class PrismaAuthStore implements AuthStore {
   constructor(private readonly db: PrismaService) {}
 
-  private toUser(u: { id: string; shopId: string; role: string; name: string; passwordHash: string; active: boolean; failedLogins: number; lockedUntil: Date | null }): StoredUser {
-    return { ...u, role: u.role as Role };
+  private toUser(u: { id: string; shopId: string; role: string; name: string; passwordHash: string; active: boolean; failedLogins: number; lockedUntil: Date | null; shop: { status: StoredUser['shopStatus'] } }): StoredUser {
+    const { shop, ...rest } = u;
+    return { ...rest, role: u.role as Role, shopStatus: shop.status };
   }
 
   async findUserByLogin(login: string): Promise<StoredUser | null> {
     const l = login.trim();
-    const u = await this.db.user.findFirst({ where: l.includes('@') ? { email: { equals: l, mode: 'insensitive' } } : { phone: l } });
+    const u = await this.db.user.findFirst({ where: l.includes('@') ? { email: { equals: l, mode: 'insensitive' } } : { phone: l }, include: { shop: { select: { status: true } } } });
     return u ? this.toUser(u) : null;
   }
 
   async findUserById(id: string): Promise<StoredUser | null> {
-    const u = await this.db.user.findUnique({ where: { id } });
+    const u = await this.db.user.findUnique({ where: { id }, include: { shop: { select: { status: true } } } });
     return u ? this.toUser(u) : null;
   }
 

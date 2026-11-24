@@ -50,7 +50,7 @@ function ScanArt() {
   );
 }
 
-export function Login({ onDone }: { onDone: (m: Me) => void }) {
+export function Login({ onDone, onSignup }: { onDone: (m: Me) => void; onSignup?: () => void }) {
   const { t, lang, setLang } = useT();
   const [id, setId] = useState('');
   const [pw, setPw] = useState('');
@@ -72,7 +72,11 @@ export function Login({ onDone }: { onDone: (m: Me) => void }) {
     try {
       onDone(await login(id.trim(), pw));
     } catch (x) {
-      setErr(x instanceof ApiError && x.status === 423 ? t.locked : x instanceof ApiError && x.status === 401 ? t.badLogin : navigator.onLine ? t.error : t.offline);
+      const code = x instanceof ApiError ? x.body?.code : null;
+      setErr(
+        code === 'SHOP_PENDING' ? t.shopPending : code === 'SHOP_REJECTED' ? t.shopRejected
+        : x instanceof ApiError && x.status === 423 ? t.locked : x instanceof ApiError && x.status === 401 ? t.badLogin : navigator.onLine ? t.error : t.offline,
+      );
     } finally {
       setBusy(false);
     }
@@ -137,6 +141,11 @@ export function Login({ onDone }: { onDone: (m: Me) => void }) {
             <li><Svg d={ICON.shield} size={16} /> {t.authTrust1}</li>
             <li><Svg d={ICON.cloud} size={16} /> {t.authTrust2}</li>
           </ul>
+          {onSignup && (
+            <button type="button" className="auth-alt" onClick={onSignup}>
+              {t.newShopQ} <b>{t.signupLink}</b>
+            </button>
+          )}
           {website && <a className="auth-back" href={website}>{t.authWebsite}</a>}
         </form>
       </main>

@@ -17,3 +17,10 @@ docs/demo/
 *.mp4
 *.webm
 .git/
+# Windows desktop app (not part of the website)
+apps/desktop/build/
+apps/desktop/dist/
+# Big local outputs (installer zip, demo screenshots)
+release/
+docs/demo/
+apps/desktop/build/

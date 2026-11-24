@@ -33,6 +33,7 @@ import { ExportService } from './backup/export.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { AiRouter } from './scans/ai/ai-router.js';
 import { SetupController } from './setup/setup.controller.js';
+import { PlatformAdminController, SignupController } from './setup/signup.controller.js';
 import { CronController } from './scans/cron.controller.js';
 import { AiSettingsController } from './scans/ai/ai-settings.controller.js';
 import { ShopContextInterceptor } from './prisma/shop-context.js';
@@ -75,7 +76,7 @@ export class AppModule {
     return {
       module: AppModule,
       imports: [JwtModule.register({ secret: config.JWT_SECRET, signOptions: { algorithm: 'HS256' }, verifyOptions: { algorithms: ['HS256'] } })],
-      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, StockDocsController, ScansController, DashboardController, DayController, ReportsController, UsersController, BackupController, AiSettingsController, CronController, SetupController],
+      controllers: [HealthController, AuthController, ProductsController, PartiesController, DocumentsController, StockDocsController, ScansController, DashboardController, DayController, ReportsController, UsersController, BackupController, AiSettingsController, CronController, SetupController, SignupController, PlatformAdminController],
       providers,
     };
   }

@@ -11,7 +11,7 @@ export function LedgerList() {
   const { t } = useT();
   const [q, setQ] = useState('');
   const [type, setType] = useState<'' | 'CUSTOMER' | 'SUPPLIER'>('');
-  const { data, error, reload } = useLoad(() => get(`/parties?${type ? `type=${type}&` : ''}${q ? `q=${encodeURIComponent(q)}` : ''}`), [q, type]);
+  const { data, error, reload } = useLoad(() => get(`/parties?${type ? `type=${type}&` : ''}${q ? `q=${encodeURIComponent(q)}` : ''}`), [q, type], { keepWhileSearching: true });
   return (
     <>
       <Top title={t.ledger} />

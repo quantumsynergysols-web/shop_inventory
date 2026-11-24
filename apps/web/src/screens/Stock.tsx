@@ -14,7 +14,7 @@ export function StockList({ lowOnly }: { lowOnly: boolean }) {
     const h = setTimeout(() => setDebounced(q), 250);
     return () => clearTimeout(h);
   }, [q]);
-  const { data, error, reload } = useLoad(() => get(`/products?limit=200${debounced ? `&q=${encodeURIComponent(debounced)}` : ''}${lowOnly ? '&lowStock=1' : ''}`), [debounced, lowOnly]);
+  const { data, error, reload } = useLoad(() => get(`/products?limit=200${debounced ? `&q=${encodeURIComponent(debounced)}` : ''}${lowOnly ? '&lowStock=1' : ''}`), [debounced, lowOnly], { keepWhileSearching: true });
   const canExport = me.role === 'OWNER' || me.role === 'ACCOUNTANT';
   return (
     <>

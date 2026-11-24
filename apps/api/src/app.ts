@@ -34,6 +34,9 @@ export async function createApp(config: AppConfig, overrides: AppOverrides = {},
   // A long multi-page bill's autosave is larger than Express's 100 KB default
   app.useBodyParser('json', { limit: '2mb' });
   app.use('/api/auth/login', loginLimiter(config.LOGIN_LIMIT_PER_IP));
+  // a handful of sign-ups and admin-key tries per IP per 15 minutes
+  app.use('/api/signup', loginLimiter(5));
+  app.use('/api/admin', loginLimiter(60));
   const web = isAbsolute(config.WEB_DIST) ? config.WEB_DIST : join(process.cwd(), config.WEB_DIST);
   if (existsSync(join(web, 'index.html')))
     app.useStaticAssets(web, {

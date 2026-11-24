@@ -20,7 +20,7 @@ export function PartyPicker({ kind, value, onChange, suggested }: { kind: 'SALE'
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const type = kind === 'SALE' ? 'CUSTOMER' : 'SUPPLIER';
-  const { data } = useLoad(() => (open ? get<PartyLite[]>(`/parties?type=${type}${q ? `&q=${encodeURIComponent(q)}` : ''}`) : Promise.resolve([])), [open, q]);
+  const { data } = useLoad(() => (open ? get<PartyLite[]>(`/parties?type=${type}${q ? `&q=${encodeURIComponent(q)}` : ''}`) : Promise.resolve([])), [open, q], { keepWhileSearching: true });
   const label = kind === 'SALE' ? t.customer : t.supplier;
 
   async function create() {

@@ -8,6 +8,8 @@ export interface StoredUser {
   name: string;
   passwordHash: string;
   active: boolean;
+  /** ACTIVE, or PENDING / REJECTED for an online sign-up that QSSols has not approved */
+  shopStatus: 'ACTIVE' | 'PENDING' | 'REJECTED';
   failedLogins: number;
   lockedUntil: Date | null;
 }

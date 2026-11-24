@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { HttpException, HttpStatus, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, HttpException, HttpStatus, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { APP_CONFIG, type AppConfig } from '../config.js';
 import { AUTH_STORE, type AuthStore, type StoredUser } from './auth.store.js';
@@ -54,6 +54,9 @@ export class AuthService {
       throw new UnauthorizedException(BAD_LOGIN);
     }
     if (user.failedLogins !== 0 || user.lockedUntil) await this.store.setLoginFailures(user.id, 0, null);
+    // Online sign-up: the right password, but QSSols has not approved the shop (yet)
+    if (user.shopStatus === 'PENDING') throw new ForbiddenException({ code: 'SHOP_PENDING', message: 'Your shop is waiting for approval by QSSols. You can log in once it is approved.' });
+    if (user.shopStatus === 'REJECTED') throw new ForbiddenException({ code: 'SHOP_REJECTED', message: 'This shop sign-up was not approved. Please contact QSSols.' });
 
     const refreshToken = randomBytes(32).toString('base64url');
     await this.store.createSession({ userId: user.id, tokenHash: sha256(refreshToken), expiresAt: this.sessionExpiry(now), userAgent });

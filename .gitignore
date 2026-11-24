@@ -26,3 +26,7 @@ vercel-out/
 
 apps/desktop/build/
 apps/desktop/dist/
+
+release/
+docs/demo/howto-shots/
+docs/demo/music/

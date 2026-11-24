@@ -109,6 +109,12 @@ enum DayStatus {
   REOPENED
 }
 
+enum ShopStatus {
+  ACTIVE
+  PENDING
+  REJECTED
+}
+
 model Shop {
   id                 String    @id @default(uuid()) @db.Uuid
   name               String
@@ -118,6 +124,10 @@ model Shop {
   logoKey            String?
   receiptFooter      String?
   plan               String    @default("starter")
+  /// Online sign-up: PENDING until QSSols approves; REJECTED shops cannot log in. Existing and desktop shops are ACTIVE.
+  status             ShopStatus @default(ACTIVE)
+  /// Sign-up details for the approval list (city, how they heard of us); null for shops made by setup/seed
+  signup             Json?
   /// FR-SET-03 defaults: markupPct, allowNegativeStock, lowStockDefault, salesmanMayCloseDay,
   /// salesmanExpenseLimitPaisa, closingNoteLimitPaisa
   settings           Json      @default("{}")

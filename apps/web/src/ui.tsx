@@ -82,8 +82,12 @@ export function useToast(): [string | null, (m: string) => void] {
 }
 
 /** Loads data and reloads when deps change; `reload` refetches. */
-export function useLoad<T>(fn: () => Promise<T>, deps: unknown[]): { data: T | null; error: Error | null; loading: boolean; reload: () => void; set: (d: T) => void } {
-  const [data, setData] = useState<T | null>(null);
+export function useLoad<T>(fn: () => Promise<T>, deps: unknown[], opts: { keepWhileSearching?: boolean } = {}): { data: T | null; error: Error | null; loading: boolean; reload: () => void; set: (d: T) => void } {
+  // The data remembers which deps it was loaded for. When the deps change (e.g. /stock/new → /stock/<id>),
+  // the old data is never handed to the new screen; it shows loading until its own data arrives.
+  // A reload keeps the same deps, so the screen does not flash while refreshing.
+  const key = JSON.stringify(deps);
+  const [state, setState] = useState<{ key: string; data: T | null }>({ key, data: null });
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(true);
   const [n, setN] = useState(0);
@@ -91,15 +95,16 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[]): { data: T | n
     let live = true;
     setLoading(true);
     fn()
-      .then((d) => live && (setData(d), setError(null)))
+      .then((d) => live && (setState({ key, data: d }), setError(null)))
       .catch((e) => live && setError(e))
       .finally(() => live && setLoading(false));
     return () => {
       live = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, n]);
-  return { data, error, loading, reload: () => setN((x) => x + 1), set: setData };
+  }, [key, n]);
+  // Search lists keep showing the previous results while the next ones load (no blank flash per key press)
+  return { data: state.key === key || opts.keepWhileSearching ? state.data : null, error, loading, reload: () => setN((x) => x + 1), set: (d: T) => setState({ key, data: d }) };
 }
 
 /* ---------- pieces ---------- */

@@ -8,8 +8,8 @@ export class MemoryAuthStore implements AuthStore {
   auditLog: { action: string; userId: string | null }[] = [];
   phones = new Map<string, string>();
 
-  addUser(u: Omit<StoredUser, 'id' | 'failedLogins' | 'lockedUntil'> & { phone: string }): StoredUser {
-    const user: StoredUser = { id: randomUUID(), failedLogins: 0, lockedUntil: null, name: u.name, shopId: u.shopId, role: u.role, passwordHash: u.passwordHash, active: u.active };
+  addUser(u: Omit<StoredUser, 'id' | 'failedLogins' | 'lockedUntil' | 'shopStatus'> & { phone: string; shopStatus?: StoredUser['shopStatus'] }): StoredUser {
+    const user: StoredUser = { id: randomUUID(), failedLogins: 0, lockedUntil: null, name: u.name, shopId: u.shopId, role: u.role, passwordHash: u.passwordHash, active: u.active, shopStatus: u.shopStatus ?? 'ACTIVE' };
     this.users.push(user);
     this.phones.set(u.phone, user.id);
     return user;

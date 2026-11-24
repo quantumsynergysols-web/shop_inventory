@@ -18,6 +18,12 @@ const schema = z.object({
   /** Bill photos and receipts (local disk in development; S3/R2 later) */
   STORAGE_DIR: z.string().default('storage'),
   /** "blob" = Vercel Blob (serverless hosting); "disk" = STORAGE_DIR */
+  /** Online version: new shops can ask for an account; QSSols approves them on the admin page */
+  SIGNUP_ENABLED: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
+  /** AI scans a month on the QSSols key for a newly signed-up shop (raise it per shop on the admin page) */
+  SIGNUP_TRIAL_SCANS: z.coerce.number().int().min(0).default(20),
+  /** QSSols admin page key (x-admin-key); at least 32 characters; empty = admin page off */
+  PLATFORM_ADMIN_KEY: z.union([z.literal(''), z.string().min(32, 'PLATFORM_ADMIN_KEY must be at least 32 characters')]).default(''),
   /** Desktop app: first-run setup screen creates the shop while the database is empty */
   SETUP_ENABLED: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
   STORAGE_DRIVER: z.enum(['disk', 'blob']).default('disk'),

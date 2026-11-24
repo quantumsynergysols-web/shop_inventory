@@ -171,3 +171,24 @@
   .auth *::after { animation: none !important; transition: none !important; }
   .auth-beam { display: none; }
 }
+
+/* "New shop? Create an account" / "Already have an account? Sign in" */
+.auth-alt { justify-self: center; background: none; border: 0; padding: 10px; font: inherit; font-size: 14px; color: var(--sub); cursor: pointer; }
+.auth-alt b { color: #a5b4ff; }
+.auth-alt:hover b { text-decoration: underline; }
+[dir='rtl'] .auth-alt { font-family: 'Noto Nastaliq Urdu', serif; line-height: 1.9; }
+.auth-done { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; color: #052e16; background: #6ee7b7; box-shadow: 0 10px 30px rgba(110, 231, 183, 0.35); }
+
+/* QSSols admin page */
+.admin, .admin * { font-family: 'IBM Plex Sans', system-ui, sans-serif; line-height: 1.45; }
+.admin .n { font-family: 'IBM Plex Mono', monospace; }
+.admin { position: fixed; inset: 0; overflow-y: auto; background: var(--stage); padding: 24px max(16px, calc((100vw - 980px) / 2)) 60px; display: grid; gap: 16px; align-content: start; z-index: 50; }
+.admin-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-top h1 { margin: 0; font-size: 24px; }
+.admin-list { display: grid; gap: 12px; }
+.admin-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.admin-row .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.admin-quota { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+.admin-quota input { width: 110px; }
+.admin-actions { display: flex; gap: 8px; }
+.admin-actions .cta { width: auto; padding: 10px 18px; }

@@ -20,7 +20,8 @@
     "build:vercel": "node scripts/vercel-out.mjs",
     "demo:bills": "node apps/api/scripts/make-demo-bills.mjs",
     "demo:record": "node scripts/record-demo.mjs",
-    "demo:record:en": "node scripts/record-demo.mjs --en"
+    "demo:record:en": "node scripts/record-demo.mjs --en",
+    "demo:howto": "node scripts/record-howto.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
