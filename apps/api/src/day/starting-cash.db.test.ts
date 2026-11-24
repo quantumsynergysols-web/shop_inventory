@@ -57,6 +57,20 @@ describe('starting cash for a new shop against PostgreSQL', { skip: !url && 'TES
     assert.equal((await call('GET', '/settings', 'owner')).json.defaults.startingCashPaisa, rs(5000));
   });
 
+  test('dates are calendar days whatever the database time zone (desktop PostgreSQL runs on Pakistan time)', async () => {
+    const { call } = api;
+    // only today's bills: today is not "a past day left open"
+    assert.equal((await call('GET', '/dashboard', 'owner')).json.unclosedDay, null);
+    // an expense on the 1st of the month counts in that month
+    const today = (await call('GET', '/day', 'owner')).json.date as string;
+    const first = `${today.slice(0, 7)}-01`;
+    const shop = await db.shop.findFirstOrThrow({ where: { name: 'New Shop' }, include: { expenseHeads: true, users: { where: { role: 'OWNER' } } } });
+    await db.expense.create({ data: { shopId: shop.id, businessDate: new Date(`${first}T00:00:00Z`), headId: shop.expenseHeads[0]!.id, amountPaisa: 12_300n, paidFrom: 'CASH', userId: shop.users[0]!.id } });
+    const month = (await call('GET', `/day/month?month=${today.slice(0, 7)}`, 'owner')).json;
+    assert.equal(month.expensesTotalPaisa, 12_300, 'the 1st of the month is inside the month');
+    await db.expense.deleteMany({ where: { shopId: shop.id, amountPaisa: 12_300n } });
+  });
+
   test('after the first closing the starting cash is fixed; the counted cash carries forward', async () => {
     const { call } = api;
     assert.equal((await call('POST', '/day/close', 'owner', { countedCashPaisa: rs(2000) })).status, 201);

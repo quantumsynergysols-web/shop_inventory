@@ -50,7 +50,7 @@ export function Home() {
           </a>
         )}
 
-        <div className="lines">
+        <div className="lines actions">
           {canScan(me.role, 'PURCHASE') && (
             <a className="bigbtn in" href="#/scan/new?type=PURCHASE" style={{ textDecoration: 'none', color: 'inherit' }}>
               <span className="ico"><Icon name="down" /></span>

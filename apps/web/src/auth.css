@@ -120,6 +120,16 @@
 .auth-back { justify-self: center; font-size: 13px; font-weight: 600; color: #9fb0ff; text-decoration: none; padding: 10px; }
 .auth-back:hover { text-decoration: underline; }
 .auth :focus-visible { outline: 3px solid #a5b4ff; outline-offset: 2px; }
+/* the field's frame shows the focus (glow), so the input itself draws no second outline */
+.auth .auth-input input:focus,
+.auth .auth-input input:focus-visible { outline: none; box-shadow: none; }
+.auth-input.bad { border-color: rgba(248, 113, 113, 0.75); }
+.auth-input.bad:focus-within { box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.22); }
+.auth-hint { display: block; min-height: 18px; margin-top: 0; font-size: 13px; line-height: 18px; font-weight: 500; color: #fca5a5; }
+.auth-field:has(.auth-hint) { gap: 5px; }
+.auth-card:has(.auth-hint) { gap: 8px; }
+.auth-card:has(.auth-hint) > h2 + .auth-muted { margin-bottom: 8px; }
+[dir='rtl'] .auth-hint { font-family: 'Noto Nastaliq Urdu', serif; min-height: 28px; line-height: 28px; }
 
 /* Urdu */
 [dir='rtl'] .auth-pitch h1 { font-family: 'Noto Nastaliq Urdu', serif; font-size: clamp(26px, 6.5vw, 46px); line-height: 1.9; letter-spacing: 0; }

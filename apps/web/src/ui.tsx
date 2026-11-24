@@ -138,6 +138,49 @@ export function Nav({ current }: { current: string }) {
   );
 }
 
+/**
+ * Desktop and wide screens (CSS shows it from 1024 px): a left sidebar with every main area, so
+ * nothing is more than one click away. Phones keep the bottom bar (Nav).
+ */
+export function SideNav({ route }: { route: Route }) {
+  const { t } = useT();
+  const { me } = useApp();
+  const canIn = me.role === 'OWNER' || me.role === 'STOREKEEPER';
+  const canOut = me.role === 'OWNER' || me.role === 'SALESMAN';
+  const area = route.parts[0] ?? 'home';
+  const type = route.query.get('type');
+  const items: { href: string; icon: string; label: string; active: boolean; hidden?: boolean }[] = [
+    { href: '/home', icon: 'home', label: t.nHome, active: area === 'home' },
+    { href: '/scan/new?type=PURCHASE', icon: 'down', label: t.inBtn, active: (area === 'manual' || (area === 'scan' && route.parts[1] === 'new')) && type === 'PURCHASE', hidden: !canIn },
+    { href: '/scan/new?type=SALE', icon: 'up', label: t.outBtn, active: (area === 'manual' || (area === 'scan' && route.parts[1] === 'new')) && type !== 'PURCHASE', hidden: !canOut },
+    { href: '/stock', icon: 'box', label: t.nStock, active: area === 'stock' },
+    { href: '/ledger', icon: 'book', label: t.nLedger, active: area === 'ledger' },
+    { href: '/day', icon: 'cash', label: t.closeDay, active: area === 'day' || area === 'month', hidden: me.role === 'STOREKEEPER' },
+    { href: '/more', icon: 'more', label: t.nMore, active: ['more', 'users', 'settings', 'ai', 'opening'].includes(area) },
+  ];
+  return (
+    <aside className="side" aria-label="Main menu">
+      <div className="side-brand">
+        <span className="side-logo"><Icon name="scan" /></span>
+        <span>
+          <b>{t.appName}</b>
+          <small>{t.roles[me.role]}</small>
+        </span>
+      </div>
+      <nav>
+        {items
+          .filter((i) => !i.hidden)
+          .map((i) => (
+            <a key={i.href} href={'#' + i.href} aria-current={i.active ? 'page' : undefined}>
+              <Icon name={i.icon} />
+              <span>{i.label}</span>
+            </a>
+          ))}
+      </nav>
+    </aside>
+  );
+}
+
 export function Sheet({ onClose, children }: { onClose: () => void; children: ReactNode }) {
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();

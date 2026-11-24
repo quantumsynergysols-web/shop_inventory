@@ -18,6 +18,8 @@ const schema = z.object({
   /** Bill photos and receipts (local disk in development; S3/R2 later) */
   STORAGE_DIR: z.string().default('storage'),
   /** "blob" = Vercel Blob (serverless hosting); "disk" = STORAGE_DIR */
+  /** Desktop app: first-run setup screen creates the shop while the database is empty */
+  SETUP_ENABLED: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
   STORAGE_DRIVER: z.enum(['disk', 'blob']).default('disk'),
   BLOB_READ_WRITE_TOKEN: z.string().default(''),
   /** Vercel Cron calls /api/cron/daily with this as a Bearer token; empty = the endpoint is off */

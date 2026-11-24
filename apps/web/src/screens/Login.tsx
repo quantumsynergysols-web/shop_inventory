@@ -62,6 +62,11 @@ export function Login({ onDone }: { onDone: (m: Me) => void }) {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    // our own message in the user's language instead of the browser's English pop-up
+    if (id.trim().length < 3 || !pw) {
+      setErr(t.needLogin);
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
@@ -104,7 +109,7 @@ export function Login({ onDone }: { onDone: (m: Me) => void }) {
         </section>
         <ScanArt />
 
-        <form className="auth-card" onSubmit={submit} noValidate={false}>
+        <form className="auth-card" onSubmit={submit} noValidate>
           <h2>{t.authWelcome}</h2>
           <p className="auth-muted">{t.authHint}</p>
           <label className="auth-field">

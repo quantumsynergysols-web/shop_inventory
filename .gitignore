@@ -23,3 +23,6 @@ vercel-out/
 
 .vercel
 .env*
+
+apps/desktop/build/
+apps/desktop/dist/

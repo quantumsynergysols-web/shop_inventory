@@ -8,11 +8,12 @@ import { Doc } from './screens/Doc';
 import { Home } from './screens/Home';
 import { LedgerList, PartyView } from './screens/Ledger';
 import { Login } from './screens/Login';
+import { Setup } from './screens/Setup';
 import { Manual } from './screens/Manual';
 import { Month, More, Settings, Users } from './screens/More';
 import { ScanNew, ScanView } from './screens/Scan';
 import { OpeningImport, ProductView, StockList } from './screens/Stock';
-import { AppCtx, Loading, useRoute, useToast, type Route } from './ui';
+import { AppCtx, Loading, SideNav, useRoute, useToast, type Route } from './ui';
 
 const LANG_KEY = 'erp.lang';
 function savedLang(): Lang {
@@ -63,6 +64,7 @@ export function App() {
   const [toastMsg, toast] = useToast();
   // FR-SCAN-07: scans waiting on this phone for the internet
   const [queued, setQueued] = useState(0);
+  const [needsSetup, setNeedsSetup] = useState(false);
   const route = useRoute();
 
   const setLang = (l: Lang) => {
@@ -79,6 +81,8 @@ export function App() {
   useEffect(() => {
     setLogoutHandler(() => setMe(null));
     resume().then(setMe).catch(() => setMe(null));
+    // Desktop first run: no shop yet, so show the setup screen instead of the login
+    fetch('/api/setup').then((r) => (r.ok ? r.json() : null)).then((j) => setNeedsSetup(!!j?.needed)).catch(() => setNeedsSetup(false));
   }, []);
 
   useEffect(() => {
@@ -94,10 +98,11 @@ export function App() {
         {me === undefined ? (
           <Loading />
         ) : me === null ? (
-          <Login onDone={setMe} />
+          needsSetup ? <Setup onDone={(m) => { setNeedsSetup(false); setMe(m); }} /> : <Login onDone={setMe} />
         ) : (
           <AppCtx.Provider value={{ me, toast, setMe }}>
             {queued > 0 && <div className="banner warn" role="status" style={{ margin: '8px 16px 0' }}>{DICTS[lang].queueWaiting(queued)}</div>}
+            <SideNav route={route} />
             <Screen r={route} />
           </AppCtx.Provider>
         )}

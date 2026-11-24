@@ -147,7 +147,7 @@ export class ReportsController {
       SELECT p.sku, p.name, p."baseUnit" AS unit, coalesce(sum(m."qtyBase"), 0)::text AS qty, coalesce(sum(m."valuePaisa"), 0)::bigint AS value
       FROM "product" p
       LEFT JOIN "stock_movement" m ON m."productId" = p.id
-        AND EXISTS (SELECT 1 FROM "doc_line" l JOIN "document" d ON d.id = l."documentId" WHERE l.id = m."docLineId" AND d."docDate" <= ${dateOnly(at)})
+        AND EXISTS (SELECT 1 FROM "doc_line" l JOIN "document" d ON d.id = l."documentId" WHERE l.id = m."docLineId" AND d."docDate" <= ${at}::date)
       WHERE p."shopId" = ${u.shopId}::uuid
       GROUP BY p.id ORDER BY p.name`;
     const t: Table = {
@@ -192,7 +192,7 @@ export class ReportsController {
       FROM "doc_line" l JOIN "document" d ON d.id = l."documentId" JOIN "stock_movement" m ON m."docLineId" = l.id
       JOIN "product" p ON p.id = l."productId" LEFT JOIN "category" c ON c.id = p."categoryId"
       WHERE d."shopId" = ${u.shopId}::uuid AND d.kind IN ('SALE', 'SALES_RETURN') AND d.status <> 'VOIDED'
-        AND d."docDate" >= ${dateOnly(from)} AND d."docDate" <= ${dateOnly(to)}
+        AND d."docDate" >= ${from}::date AND d."docDate" <= ${to}::date
       GROUP BY 1, 2 ORDER BY 2`;
     const body = rows.map((r) => {
       const revenue = paisa(r.revenue);

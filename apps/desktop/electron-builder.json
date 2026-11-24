@@ -1,0 +1,32 @@
+{
+  "appId": "com.qssols.shoperp",
+  "productName": "Shop ERP",
+  "copyright": "© Quantum Synergy Solutions",
+  "electronVersion": "45.2.3",
+  "directories": {
+    "app": "build/app",
+    "output": "dist",
+    "buildResources": "build"
+  },
+  "asar": false,
+  "npmRebuild": false,
+  "nodeGypRebuild": false,
+  "files": ["**/*", "!**/*.map", "!**/*.md", "!**/*.d.ts"],
+  "extraResources": [{ "from": "build/app/node_modules/.prisma", "to": "app/node_modules/.prisma", "filter": ["**/*", "!**/*.d.ts", "!**/*rhel*"] }],
+  "win": {
+    "target": [{ "target": "nsis", "arch": ["x64"] }],
+    "icon": "build/icon.png",
+    "artifactName": "Shop ERP Setup ${version}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Shop ERP",
+    "runAfterFinish": true,
+    "deleteAppDataOnUninstall": false,
+    "installerLanguages": ["en_US"]
+  }
+}

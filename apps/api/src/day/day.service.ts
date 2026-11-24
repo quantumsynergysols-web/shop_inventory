@@ -243,11 +243,12 @@ export class DayService {
    */
   async unclosedDay(shopId: string, today = businessDate()): Promise<string | null> {
     const t = dateOnly(today);
-    const since = new Date(t.getTime() - 30 * 86400_000);
+    // Plain calendar dates (::date) so the comparison never depends on the database's time zone
+    const sinceYmd = new Date(t.getTime() - 30 * 86400_000).toISOString().slice(0, 10);
     const rows = await this.db.$queryRaw<{ d: Date }[]>`
       SELECT d FROM (
-        SELECT "docDate" AS d FROM "document" WHERE "shopId" = ${shopId}::uuid AND "docDate" >= ${since} AND "docDate" < ${t}
-        UNION SELECT "businessDate" FROM "expense" WHERE "shopId" = ${shopId}::uuid AND "businessDate" >= ${since} AND "businessDate" < ${t}
+        SELECT "docDate" AS d FROM "document" WHERE "shopId" = ${shopId}::uuid AND "docDate" >= ${sinceYmd}::date AND "docDate" < ${today}::date
+        UNION SELECT "businessDate" FROM "expense" WHERE "shopId" = ${shopId}::uuid AND "businessDate" >= ${sinceYmd}::date AND "businessDate" < ${today}::date
       ) x
       WHERE NOT EXISTS (SELECT 1 FROM "day_closing" c WHERE c."shopId" = ${shopId}::uuid AND c."businessDate" = x.d AND c.status = 'CLOSED')
       ORDER BY d DESC LIMIT 1`;
@@ -259,20 +260,23 @@ export class DayService {
     if (!can(user.role, 'report.view')) throw new ForbiddenException('Your role cannot view monthly profit');
     const from = dateOnly(`${ym}-01`);
     const to = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + 1, 1));
+    // Raw SQL compares calendar dates (::date), never a moment in the database's time zone
+    const fromYmd = from.toISOString().slice(0, 10);
+    const toYmd = to.toISOString().slice(0, 10);
     const shopId = user.shopId;
     const [sales, returns, expenses, items, closings] = await Promise.all([
       this.db.document.aggregate({ where: { shopId, kind: 'SALE', status: { not: 'VOIDED' }, docDate: { gte: from, lt: to } }, _sum: { totalPaisa: true, cogsPaisa: true }, _count: true }),
       this.db.document.aggregate({ where: { shopId, kind: 'SALES_RETURN', docDate: { gte: from, lt: to } }, _sum: { totalPaisa: true, cogsPaisa: true } }),
       this.db.$queryRaw<{ head: string; total: bigint }[]>`
         SELECT h.name AS head, sum(e."amountPaisa")::bigint AS total FROM "expense" e JOIN "expense_head" h ON h.id = e."headId"
-        WHERE e."shopId" = ${shopId}::uuid AND e."businessDate" >= ${from} AND e."businessDate" < ${to} GROUP BY h.name ORDER BY total DESC`,
+        WHERE e."shopId" = ${shopId}::uuid AND e."businessDate" >= ${fromYmd}::date AND e."businessDate" < ${toYmd}::date GROUP BY h.name ORDER BY total DESC`,
       this.db.$queryRaw<{ id: string; name: string; qty: string; revenue: bigint; cogs: bigint }[]>`
         SELECT p.id, p.name,
           sum(CASE WHEN d.kind = 'SALE' THEN l."qtyBase" ELSE -l."qtyBase" END)::text AS qty,
           sum(CASE WHEN d.kind = 'SALE' THEN l."amountPaisa" ELSE -l."amountPaisa" END)::bigint AS revenue,
           sum(-m."valuePaisa")::bigint AS cogs
         FROM "doc_line" l JOIN "document" d ON d.id = l."documentId" JOIN "stock_movement" m ON m."docLineId" = l.id JOIN "product" p ON p.id = l."productId"
-        WHERE d."shopId" = ${shopId}::uuid AND d.kind IN ('SALE', 'SALES_RETURN') AND d.status <> 'VOIDED' AND d."docDate" >= ${from} AND d."docDate" < ${to}
+        WHERE d."shopId" = ${shopId}::uuid AND d.kind IN ('SALE', 'SALES_RETURN') AND d.status <> 'VOIDED' AND d."docDate" >= ${fromYmd}::date AND d."docDate" < ${toYmd}::date
         GROUP BY p.id, p.name`,
       this.db.dayClosing.findMany({ where: { shopId, businessDate: { gte: from, lt: to } }, orderBy: { businessDate: 'asc' } }),
     ]);
