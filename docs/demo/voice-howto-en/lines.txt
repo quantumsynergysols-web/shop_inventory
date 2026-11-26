@@ -1,0 +1,16 @@
+Welcome to Shop ERP. In this video, you will see how to run your shop's stock, purchases, sales and customer accounts on the computer.
+After you install the app, this setup screen appears the first time. Type the shop name, the owner's name, a phone number and a password, then click Create shop and start.
+This is the home screen. It shows the stock value, and today's purchases, sales and profit. For this video, some products and opening stock were added in advance. The menu is on the left.
+Inventory shows the current quantity of every item, and low stock in red. Click New product, type the name, purchase price, sale price and reorder level, and save.
+A supplier's bill has arrived. Open Purchase, choose the photo of the bill, and click Read the bill.
+Reading bills with A.I. needs an A.I. key. This demo has no key, so a recorded reading is shown. The app warns that line five may have been missed, and every line shows its piece of the photo, side by side.
+Let's add the missing line ourselves. Search for the dinner set we just created, and pick it. Quantity six, and the rate is seven thousand five hundred rupees.
+Now the lines add up to the bill total, and the supplier was recognised from the bill. Nothing changes in stock until you save. As soon as you save, the stock goes up.
+Now, a photo of a sale bill. The bill has sixty tee joints, but only forty five are in stock, so the app stops the sale. We change the quantity to forty five.
+The customer, Rana Builders, was matched from the bill. They pay thirty thousand rupees in cash, and the rest goes to their credit account.
+The sale is saved, and the stock went down. The receipt is ready. Print it, or send it on WhatsApp.
+The ledger shows the balance of every customer and supplier. Rana Builders paid ten thousand rupees. Record the payment, and their balance goes down.
+At the end of the day, open Day-end closing. Add the tea expense. On a new shop's first day, also enter the starting cash in the drawer, just once.
+Now count the cash in the drawer, and type the amount. The app compares it with the expected cash, and shows any difference. Close the day, and the counted cash becomes tomorrow's opening cash.
+More has the reports and data safety: an automatic daily backup, and a full download of all data, with Excel and photos. The A.I. bill reading settings are here too. Phones on the shop's Wi-Fi can open the app as well. The Help menu explains how.
+Shop ERP, by Quantum Synergy Solutions. Thank you for watching.

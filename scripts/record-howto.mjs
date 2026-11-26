@@ -1,8 +1,10 @@
-// Records the Urdu "how to use" video of the desktop app (desktop layout, 1280x720).
+// Records the "how to use" video of the desktop app (desktop layout, 1280x720), in Urdu or English.
 //
 //   npm run build && npm run build --workspace @erp/web
 //   node scripts/make-music.mjs            (once: writes docs/demo/music/howto-bed.mp3)
 //   node scripts/record-howto.mjs          -> docs/demo/shop-erp-howto-ur.mp4
+//   node scripts/record-howto.mjs --en     -> docs/demo/shop-erp-howto-en.mp4 (English app, captions and
+//                                             narration from docs/demo/voice-howto-en, made by scripts/make-voice-en.ps1)
 //   node scripts/record-howto.mjs --shots  also saves a screenshot per step to docs/demo/howto-shots/
 //
 // Same approach as scripts/record-demo.mjs (which stays as it is):
@@ -25,24 +27,34 @@ import { PrismaClient } from '@prisma/client';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const api = join(root, 'apps/api');
 const outDir = join(root, 'docs/demo');
-const voiceDir = join(outDir, 'voice-howto');
+const EN = process.argv.includes('--en');
+const voiceDir = join(outDir, EN ? 'voice-howto-en' : 'voice-howto');
 const musicFile = join(outDir, 'music/howto-bed.mp3');
-const OUT = join(outDir, 'shop-erp-howto-ur.mp4');
+const OUT = join(outDir, EN ? 'shop-erp-howto-en.mp4' : 'shop-erp-howto-ur.mp4');
 const SHOTS = process.argv.includes('--shots') ? join(outDir, 'howto-shots') : null;
 const PORT = 3100;
 const BASE = `http://localhost:${PORT}`;
 // Demo-only login for the throwaway demo database (the password is typed into a masked field).
 const OWNER = { phone: '03001234567', password: 'demo-owner-2026', name: 'Haji Bilal' };
 const SHOP = 'Noor Sanitary & Electric';
-// Button and label text as the app shows it in Urdu (apps/web/src/i18n.tsx).
-const UI = {
+// Button and label text as the app shows it (apps/web/src/i18n.tsx).
+const UI_UR = {
   setupGo: 'دکان بنائیں اور شروع کریں', newProduct: 'نئی پروڈکٹ', name: 'نام', category: 'کیٹیگری', purchasePrice: 'قیمتِ خرید', salePrice: 'قیمتِ فروخت', minLevel: 'کم از کم حد', save: 'محفوظ کریں',
   upload: 'بل پڑھیں', review: 'بل چیک کریں', addLine: 'لائن شامل کریں', written: 'کاغذ پر لکھا', searchProduct: 'پروڈکٹ تلاش کریں', qty: 'مقدار', rate: 'ریٹ', ok: 'ٹھیک ہے',
   confirmIn: 'خریداری محفوظ کریں (اسٹاک اِن)', doneIn: 'خریداری محفوظ ہو گئی', received: 'وصول رقم', confirmOut: 'فروخت محفوظ کریں اور رسید بنائیں', doneOut: 'فروخت محفوظ ہو گئی',
   recordPayment: 'ادائیگی درج کریں', setStart: 'درج کریں', startQ: 'دکان شروع کرتے وقت', addExp: 'خرچ درج کریں', expected: 'متوقع کیش', closeBtn: 'دن بند کریں', dataSafety: 'ڈیٹا کی حفاظت', aiSettings: 'AI بل ریڈنگ',
+  print: 'پرنٹ',
 };
+const UI_EN = {
+  setupGo: 'Create shop and start', newProduct: 'New product', name: 'Name', category: 'Category', purchasePrice: 'Purchase price', salePrice: 'Sale price', minLevel: 'Reorder level', save: 'Save',
+  upload: 'Read the bill', review: 'Review bill', addLine: 'Add line', written: 'Written on paper', searchProduct: 'Search product', qty: 'Quantity', rate: 'Rate', ok: 'Done',
+  confirmIn: 'Save purchase (stock in)', doneIn: 'Purchase saved', received: 'Amount received', confirmOut: 'Save sale & create receipt', doneOut: 'Sale saved',
+  recordPayment: 'Record payment', setStart: 'Set', startQ: 'when you started using the app', addExp: 'Add expense', expected: 'Expected cash', closeBtn: 'Close the day', dataSafety: 'Data safety', aiSettings: 'AI bill reading',
+  print: 'Print',
+};
+const UI = EN ? UI_EN : UI_UR;
 // One caption per narration clip, in order.
-const CAPTIONS = [
+const CAPTIONS_UR = [
   'شاپ ای آر پی — استعمال کا طریقہ',
   'پہلی بار سیٹ اپ',
   'ہوم: آج کا حساب ایک نظر میں',
@@ -60,6 +72,25 @@ const CAPTIONS = [
   'ڈیٹا کی حفاظت اور AI سیٹنگ',
   'شکریہ',
 ];
+const CAPTIONS_EN = [
+  'Shop ERP — how to use it',
+  'First-time setup',
+  'Home: today at a glance',
+  'Inventory: a new product',
+  'Purchase: photo of the bill',
+  'Review: the photo side by side',
+  'Add the missed line',
+  'Save, and stock goes up',
+  'Sale: short stock is stopped',
+  'Customer, cash and credit',
+  'Receipt: print or WhatsApp',
+  'Ledger: collecting a payment',
+  'Day-end: starting cash and an expense',
+  'Count the cash, close the day',
+  'Data safety and AI settings',
+  'Thank you',
+];
+const CAPTIONS = EN ? CAPTIONS_EN : CAPTIONS_UR;
 const clip = (n) => join(voiceDir, `step-${String(n).padStart(2, '0')}.mp3`);
 const clipSeconds = (n) => (existsSync(clip(n)) ? Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', clip(n)]).toString().trim()) : 0);
 
@@ -158,7 +189,7 @@ async function seedThroughApi() {
 
 // Caption box (bottom of the sidebar, which is empty below the menu), title cards and tap marks.
 // Added outside React's root, so the app never removes them.
-const OVERLAY = `(() => {
+const OVERLAY_UR = `(() => {
   const css = \`
   #hx-cap{position:fixed;right:14px;bottom:16px;width:220px;z-index:2147483000;padding:14px 16px 16px;border-radius:16px;
     background:rgba(16,22,58,.92);color:#fff;box-shadow:0 12px 30px rgba(0,0,0,.28);direction:rtl;text-align:right;
@@ -186,6 +217,16 @@ const OVERLAY = `(() => {
   };
   if (document.body) add(); else document.addEventListener('DOMContentLoaded', add);
 })()`;
+// English: left-to-right, Latin font
+const OVERLAY = EN
+  ? OVERLAY_UR.replace('position:fixed;right:14px;bottom:16px', 'position:fixed;left:14px;bottom:16px') // the sidebar is on the left
+      .replaceAll('direction:rtl;text-align:right', 'direction:ltr;text-align:left')
+      .replaceAll("'Noto Nastaliq Urdu',serif", "'IBM Plex Sans',system-ui,sans-serif")
+      .replace('font-size:19px;line-height:2.05', 'font-size:18px;line-height:1.4;font-weight:600')
+      .replace('font-size:40px;font-weight:600;line-height:2;direction:rtl', 'font-size:34px;font-weight:600;line-height:1.3')
+      .replace('font-size:21px;line-height:2.1;color:#c9d0f5;direction:rtl', 'font-size:20px;line-height:1.5;color:#c9d0f5')
+      .replace('direction:ltr;text-align:right}', 'direction:ltr;text-align:left}')
+  : OVERLAY_UR;
 
 let dbgPage = null;
 const errors = [];
@@ -198,14 +239,14 @@ async function record() {
   const framesDir = join(tmpBase, 'frames');
   mkdirSync(framesDir, { recursive: true });
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, locale: 'ur-PK', timezoneId: 'Asia/Karachi' });
-  await context.addInitScript(() => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, locale: EN ? 'en-PK' : 'ur-PK', timezoneId: 'Asia/Karachi' });
+  await context.addInitScript((lang) => {
     try {
-      localStorage.setItem('erp.lang', 'ur');
+      localStorage.setItem('erp.lang', lang);
     } catch {
       /* ignore */
     }
-  });
+  }, EN ? 'en' : 'ur');
   await context.addInitScript(OVERLAY);
   const page = await context.newPage();
   dbgPage = page;
@@ -333,7 +374,11 @@ async function record() {
   const side = (href) => page.locator(`aside.side a[href="#${href}"]`);
 
   // 1. Title card
-  await card(`<div class="k">Quantum Synergy Solutions</div><h1>Shop ERP</h1><h2>استعمال کا طریقہ</h2><p>کمپیوٹر پر دکان کا حساب کتاب: اسٹاک، خرید، فروخت، کھاتہ اور ڈے کلوزنگ</p><div class="f">Demo with made-up shop data</div>`);
+  await card(
+    EN
+      ? `<div class="k">Quantum Synergy Solutions</div><h1>Shop ERP</h1><h2>How to use it</h2><p>Your shop's accounts on the computer: stock, purchases, sales, ledger and day-end closing</p><div class="f">Demo with made-up shop data</div>`
+      : `<div class="k">Quantum Synergy Solutions</div><h1>Shop ERP</h1><h2>استعمال کا طریقہ</h2><p>کمپیوٹر پر دکان کا حساب کتاب: اسٹاک، خرید، فروخت، کھاتہ اور ڈے کلوزنگ</p><div class="f">Demo with made-up shop data</div>`,
+  );
   await page.waitForTimeout(1200);
   await say(4500, { noCaption: true });
   await card(null);
@@ -461,7 +506,7 @@ async function record() {
   await page.locator('.receipt-frame').scrollIntoViewIfNeeded();
   await page.waitForTimeout(800);
   await point(page.locator('button.cta.wa'), 1800);
-  await point(page.locator('button.cta.sec', { hasText: 'پرنٹ' }), 1800);
+  await point(page.locator('button.cta.sec', { hasText: UI.print }), 1800);
   await waitTalk(400);
 
   // 12. Ledger: wasooli
@@ -517,7 +562,7 @@ async function record() {
 
   // 16. Closing card
   await caption('', null);
-  await card(`<div class="k">Shop ERP</div><h2>شکریہ</h2><p>مدد یا سوال کے لیے رابطہ کریں</p><h1 style="font-size:40px">Quantum Synergy Solutions</h1><div class="f">Demo with made-up shop data · AI reading needs an AI key</div>`);
+  await card(`<div class="k">Shop ERP</div><h2>${EN ? 'Thank you' : 'شکریہ'}</h2><p>${EN ? 'For help or questions, contact us' : 'مدد یا سوال کے لیے رابطہ کریں'}</p><h1 style="font-size:40px">Quantum Synergy Solutions</h1><div class="f">Demo with made-up shop data · AI reading needs an AI key</div>`);
   await page.waitForTimeout(900);
   await say(4500, { noCaption: true });
   await waitTalk(1500);
